@@ -490,9 +490,7 @@
         let player, isPlayerReady = false, isPlaying = false;
         let allQuestions = [], currentQuizData = [];
         let userName = "", currentAvatar = "Chris.png";
-        
-        // 影片索引追蹤 (隨機開始)
-        let currentVideoIdx = Math.floor(Math.random() * YOUTUBE_PLAYLIST.length);
+        let currentVideoIdx = 0;
         
         // 測驗狀態
         let quizState = {
@@ -500,8 +498,7 @@
             score: 0, // 累計答對的小題數
             totalSubQuestions: 0, // 該關卡總小題數
             currentIndex: 0, // 當前題組索引
-            pageAnsweredCount: 0, // 當前頁面已回答的小題數
-            pageState: {} // 當前頁面的答題狀態記錄 { subQId: { selected: "A", isCorrect: true } }
+            pageAnsweredCount: 0 // 當前頁面已回答的小題數
         };
 
         const audioCorrect = new Audio('sounds/correct.mp3'); audioCorrect.volume = 0.4;
@@ -557,12 +554,9 @@
 
         function deleteUser(name) {
             if(!confirm(`刪除 ${name} 的所有資料？`)) return;
-            
-            // 清除該用戶所有相關資料
-            const prefix = APP_PREFIX + name;
-            Object.keys(localStorage).forEach(key => {
-                if(key.startsWith(prefix)) localStorage.removeItem(key);
-            });
+            localStorage.removeItem(APP_PREFIX + name + '_quizHistory');
+            localStorage.removeItem(APP_PREFIX + name + '_quizProgress');
+            localStorage.removeItem(APP_PREFIX + name + '_standardProgress');
             
             let users = JSON.parse(localStorage.getItem(APP_PREFIX+'savedUsers')) || [];
             localStorage.setItem(APP_PREFIX+'savedUsers', JSON.stringify(users.filter(u => u.name !== name)));
@@ -599,6 +593,10 @@
             if(!progress.maxLevel) progress.maxLevel = 1;
 
             // 計算總進度
+            let unlockedCount = progress.maxLevel - 1;
+            // 檢查最後一關是否通過(若有分數且>=60)
+            if(progress.scores[progress.maxLevel] >= 60) unlockedCount++;
+            // 簡單算法：(已完成關卡數 / 總關卡數)
             let completedLevels = Object.keys(progress.scores).length;
             let percent = Math.round((completedLevels / LEVEL_CONFIG.length) * 100);
             document.getElementById('overall-progress').innerText = `總進度：${percent}%`;
@@ -615,12 +613,7 @@
                     else if (score >= 70) icon = '🥈';
                     else if (score >= 60) icon = '🥉';
                     
-                    // 檢查是否有未完成的進度
-                    const savedKey = getUserKey('progress_level_' + level);
-                    const hasSaved = localStorage.getItem(savedKey);
-                    const resumeText = hasSaved ? '<div style="font-size:0.8em;color:#e67e22;">(未完待續)</div>' : '';
-
-                    btn.innerHTML = `<div class="lvl-icon">${icon}</div><div class="lvl-label">關卡 ${level}</div>${score !== undefined ? `<div class="lvl-score">${score}分</div>` : ''}${resumeText}`;
+                    btn.innerHTML = `<div class="lvl-icon">${icon}</div><div class="lvl-label">關卡 ${level}</div>${score !== undefined ? `<div class="lvl-score">${score}分</div>` : ''}`;
                     btn.onclick = () => startQuiz(level);
                 } else {
                     btn.disabled = true;
@@ -630,7 +623,7 @@
             });
         }
 
-        function startQuiz(level) {
+        function startQuiz(level, forceNew = false) {
             // 計算該關卡的題目範圍
             let startIdx = 0;
             for(let i=0; i<level-1; i++) startIdx += LEVEL_CONFIG[i];
@@ -639,36 +632,21 @@
             // 載入題目
             currentQuizData = allQuestions.slice(startIdx, endIdx);
             
-            // 檢查是否有存檔
-            const saveKey = getUserKey('progress_level_' + level);
-            const savedState = localStorage.getItem(saveKey);
+            // 初始化狀態
+            quizState = {
+                level: level,
+                score: 0, // 累計答對小題數
+                totalSubQuestions: 0, // 該關卡總小題數計算
+                currentIndex: 0,
+                pageAnsweredCount: 0
+            };
 
-            if (savedState) {
-                // 恢復存檔
-                quizState = JSON.parse(savedState);
-                // 確保 totalSubQuestions 正確 (避免舊存檔結構問題)
-                let total = 0;
-                currentQuizData.forEach(q => total += q.subQuestions.length);
-                quizState.totalSubQuestions = total;
-            } else {
-                // 初始化新狀態
-                quizState = {
-                    level: level,
-                    score: 0,
-                    totalSubQuestions: 0,
-                    currentIndex: 0,
-                    pageAnsweredCount: 0,
-                    pageState: {}
-                };
-                currentQuizData.forEach(q => quizState.totalSubQuestions += q.subQuestions.length);
-            }
+            // 計算該關卡總小題數
+            currentQuizData.forEach(q => {
+                quizState.totalSubQuestions += q.subQuestions.length;
+            });
             
             loadQuizUI();
-        }
-
-        function saveQuizProgress() {
-            const saveKey = getUserKey('progress_level_' + quizState.level);
-            localStorage.setItem(saveKey, JSON.stringify(quizState));
         }
 
         function loadQuizUI() {
@@ -683,7 +661,8 @@
             const qData = currentQuizData[quizState.currentIndex];
             if(!qData) return finishQuiz();
             
-            // UI 重置
+            // 重置本頁狀態
+            quizState.pageAnsweredCount = 0;
             document.getElementById('next-btn').style.display = 'none';
 
             // 更新進度條
@@ -701,7 +680,7 @@
             qData.subQuestions.forEach((subQ, idx) => {
                 const subDiv = document.createElement('div');
                 subDiv.className = 'sub-question-item';
-                subDiv.id = `subq-${subQ.id}`;
+                subDiv.id = `subq-${subQ.id}`; // 增加ID方便定位
                 
                 // 題目文字
                 const qText = document.createElement('div');
@@ -715,7 +694,7 @@
                 
                 subQ.options.forEach(opt => {
                     const btn = document.createElement('button');
-                    btn.className = `option-btn opt-btn-${subQ.id}`; 
+                    btn.className = `option-btn opt-btn-${subQ.id}`; // 加入ID以便選取
                     
                     if(opt.includes('<img')) {
                         btn.innerHTML = opt;
@@ -723,64 +702,23 @@
                         btn.innerText = opt;
                     }
                     
+                    // 點擊立即觸發判斷邏輯
                     btn.onclick = () => handleAnswerImmediate(subQ.id, opt, btn, subQ.ans, subQ.explanation);
                     optList.appendChild(btn);
                 });
                 
                 subDiv.appendChild(optList);
 
-                // 獨立解析區塊
+                // 獨立解析區塊 (預設隱藏)
                 const expDiv = document.createElement('div');
                 expDiv.className = 'single-explanation';
                 expDiv.id = `exp-${subQ.id}`;
+                // 預填解析內容，稍後顯示
                 expDiv.innerHTML = `<strong>💡 解析：</strong>${subQ.explanation || '略'}`;
                 subDiv.appendChild(expDiv);
 
                 container.appendChild(subDiv);
             });
-
-            // --- 恢復作答狀態 ---
-            // 如果此頁面有已保存的作答紀錄，恢復 UI 狀態
-            if (quizState.pageState && Object.keys(quizState.pageState).length > 0) {
-                // 遍歷當前題目的小題
-                qData.subQuestions.forEach(subQ => {
-                    const savedAnswer = quizState.pageState[subQ.id];
-                    if (savedAnswer) {
-                        // 找到對應的按鈕並標示
-                        const allBtns = document.querySelectorAll(`.opt-btn-${subQ.id}`);
-                        allBtns.forEach(btn => {
-                            btn.disabled = true; // 鎖定
-                            
-                            // 判斷按鈕的 Key
-                            let btnKey = "";
-                            const text = btn.innerText || btn.innerHTML;
-                            if(text.includes("(A)") || text.includes("q010_a")) btnKey = "A";
-                            else if(text.includes("(B)") || text.includes("q010_b")) btnKey = "B";
-                            else if(text.includes("(C)") || text.includes("q010_c")) btnKey = "C";
-                            else if(text.includes("(D)") || text.includes("q010_d")) btnKey = "D";
-                            else btnKey = text;
-
-                            // 如果是被選中的按鈕
-                            if (savedAnswer.selected === btn.innerText || 
-                                (btn.innerHTML.includes('<img') && savedAnswer.selected.includes('<img'))) {
-                                if (savedAnswer.isCorrect) btn.classList.add('correct');
-                                else btn.classList.add('wrong');
-                            }
-                            // 總是標示正確答案
-                            if (btnKey === subQ.ans) btn.classList.add('correct');
-                        });
-
-                        // 顯示解析
-                        const expDiv = document.getElementById(`exp-${subQ.id}`);
-                        if(expDiv) expDiv.style.display = 'block';
-                    }
-                });
-
-                // 檢查是否所有題目都回答了，若是則顯示下一頁按鈕
-                if (quizState.pageAnsweredCount >= qData.subQuestions.length) {
-                    document.getElementById('next-btn').style.display = 'block';
-                }
-            }
         }
 
         function handleAnswerImmediate(qId, selectedValue, btnElement, correctAns, explanationText) {
@@ -799,16 +737,12 @@
             // 視覺回饋
             let isCorrect = (userKey === correctAns);
             
-            // 更新狀態
-            if (!quizState.pageState) quizState.pageState = {};
-            quizState.pageState[qId] = { selected: selectedValue, isCorrect: isCorrect };
-            quizState.pageAnsweredCount++;
-
             // 對錯音效與計分
             if(isCorrect) {
                 btnElement.classList.add('correct');
                 quizState.score++;
                 audioCorrect.play().catch(()=>{});
+                // 簡單特效
                 confetti({ particleCount: 30, origin: { y: 0.8 }, spread: 50 });
             } else {
                 btnElement.classList.add('wrong');
@@ -831,13 +765,12 @@
             const expDiv = document.getElementById(`exp-${qId}`);
             if(expDiv) expDiv.style.display = 'block';
 
-            // 自動存檔
-            saveQuizProgress();
-
             // 檢查本頁進度
+            quizState.pageAnsweredCount++;
             const currentQData = currentQuizData[quizState.currentIndex];
             if(quizState.pageAnsweredCount >= currentQData.subQuestions.length) {
                 document.getElementById('next-btn').style.display = 'block';
+                // 自動捲動到底部方便看到下一頁按鈕
                 setTimeout(() => {
                     document.getElementById('next-btn').scrollIntoView({behavior: "smooth"});
                 }, 100);
@@ -846,32 +779,29 @@
 
         function nextQuestion() {
             quizState.currentIndex++;
-            quizState.pageAnsweredCount = 0;
-            quizState.pageState = {}; // 清空頁面狀態以準備下一頁
-            
-            saveQuizProgress(); // 存檔新的索引
             loadQuestion();
-            
+            // 捲動回頂部
             document.querySelector('.container-box').scrollIntoView({behavior: 'smooth'});
         }
 
         function finishQuiz() {
-            // 清除該關卡的進度存檔
-            localStorage.removeItem(getUserKey('progress_level_' + quizState.level));
-
             document.getElementById('quiz-content').style.display = 'none';
             document.getElementById('score-box').style.display = 'block';
             
+            // 計算總分 (總答對題數 / 總題數) * 100
             const finalScore = Math.round((quizState.score / quizState.totalSubQuestions) * 100);
             
             document.getElementById('final-score').innerText = finalScore;
             document.getElementById('final-name').innerText = userName;
             
+            // 存檔進度
             let progress = JSON.parse(localStorage.getItem(getUserKey('quizProgress'))) || { maxLevel: 1, scores: {} };
             
+            // 紀錄最高分
             let oldScore = progress.scores[quizState.level] || 0;
             if(finalScore > oldScore) progress.scores[quizState.level] = finalScore;
             
+            // 解鎖下一關 (需達60分)
             let unlocked = false;
             if(finalScore >= 60 && quizState.level === progress.maxLevel && quizState.level < LEVEL_CONFIG.length) {
                 progress.maxLevel++;
@@ -881,12 +811,14 @@
             
             document.getElementById('unlock-msg').style.display = unlocked ? 'block' : 'none';
             
+            // 評語
             let cmt = "再接再厲！";
             if(finalScore == 100) cmt = "博學多聞，無人能敵！";
             else if(finalScore >= 80) cmt = "學富五車，令人佩服！";
             else if(finalScore >= 60) cmt = "勤奮好學，繼續保持！";
             document.getElementById('score-comment').innerText = cmt;
 
+            // 儲存歷史紀錄
             saveHistory(finalScore, `關卡 ${quizState.level}`);
         }
 
@@ -921,9 +853,10 @@
             const progress = JSON.parse(localStorage.getItem(getUserKey('quizProgress'))) || { maxLevel: 1, scores: {} };
             if(!progress.scores) progress.scores = {};
 
+            // 總共9關
             for(let i=1; i<=LEVEL_CONFIG.length; i++) {
                 const num = i<10?`0${i}`:`${i}`;
-                const unlocked = (progress.scores[i] >= 80); 
+                const unlocked = (progress.scores[i] >= 80); // 80分以上解鎖圖鑑
                 const item = document.createElement('div');
                 item.className = `card-item ${unlocked?'':'locked'}`;
                 
@@ -945,10 +878,7 @@
         function closeCardModal() { document.getElementById('card-modal').style.display = 'none'; }
         
         function logout() { location.reload(); }
-        function exitQuiz() { 
-            // 現在已自動存檔，直接離開即可
-            goToDashboard(); 
-        }
+        function exitQuiz() { if(confirm("確定要離開測驗嗎？進度將不會保存。")) goToDashboard(); }
 
         // --- AI Chat Logic ---
         function toggleChatWindow() {
@@ -1063,12 +993,9 @@
         function onPlayerStateChange(e) { 
             isPlaying = (e.data == YT.PlayerState.PLAYING);
             document.getElementById('main-play-btn').innerText = isPlaying ? '⏸' : '▶';
-            if(e.data == YT.PlayerState.ENDED) {
-                playRandomTrack(); // Automatically play random track
-            }
+            if(e.data == YT.PlayerState.ENDED) player.playVideo();
         }
         function togglePlay() { if(isPlayerReady) isPlaying ? player.pauseVideo() : player.playVideo(); }
-        
         function prevTrack() { 
             if(isPlayerReady) {
                 currentVideoIdx = (currentVideoIdx - 1 + YOUTUBE_PLAYLIST.length) % YOUTUBE_PLAYLIST.length;
@@ -1081,21 +1008,6 @@
                 player.loadVideoById(YOUTUBE_PLAYLIST[currentVideoIdx]);
             }
         } 
-        
-        // 新增的隨機播放函式
-        function playRandomTrack() {
-             if(isPlayerReady) {
-                let newIdx;
-                // 確保隨機選到的不是目前這首，除非清單只有一首
-                do {
-                    newIdx = Math.floor(Math.random() * YOUTUBE_PLAYLIST.length);
-                } while (newIdx === currentVideoIdx && YOUTUBE_PLAYLIST.length > 1);
-                
-                currentVideoIdx = newIdx;
-                player.loadVideoById(YOUTUBE_PLAYLIST[currentVideoIdx]);
-            }
-        }
-
         function setVolume(v) { if(isPlayerReady) player.setVolume(v); }
         function toggleVideoDisplay() {
             const wrap = document.getElementById('yt-wrapper');
