@@ -26,7 +26,7 @@
 
         body { 
             font-family: 'Noto Sans TC', "Microsoft JhengHei", Arial, sans-serif; 
-            max-width: 1000px; /* 加寬一點以容納雙區塊 */
+            max-width: 1200px; /* 加寬以適應左右閱讀模式 */
             margin: 0 auto; 
             padding: calc(var(--header-height) + 20px) 20px 20px 20px; 
             background-color: var(--bg-color); 
@@ -108,7 +108,7 @@
             background-size: cover; background-position: center;
         }
 
-        /* 左側：標準實驗區 (現在改為全寬) */
+        /* 左側：標準實驗區 (全寬) */
         .dashboard-std-zone {
             flex: 1; border: 1px solid #e1e8ed; border-radius: 12px; padding: 20px;
             background: rgba(255,255,255,0.85); max-width: 900px;
@@ -172,20 +172,48 @@
         .progress-bar-container { width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 20px; }
         .progress-bar-fill { height: 100%; background: var(--secondary-color); width: 0%; transition: width 0.3s; }
         
-        /* 閱讀題組樣式調整 */
-        .question-box { background: #fff; padding: 25px; border-radius: 10px; border-top: 5px solid var(--primary-color); box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .article-content { 
-            font-size: 1.15em; line-height: 1.8; color: #333; margin-bottom: 25px; 
-            max-height: 300px; overflow-y: auto; padding: 15px; background: #fafafa; border: 1px solid #eee; border-radius: 8px;
+        /* 閱讀題組樣式調整 - E-book Style */
+        .question-box { 
+            background: #fff; 
+            padding: 0;
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+            margin-bottom: 20px; 
+            display: flex;
+            flex-wrap: wrap; /* RWD */
+            overflow: hidden;
+            border-top: 5px solid var(--primary-color);
         }
-        .article-title { font-size: 1.4em; font-weight: bold; color: var(--primary-color); margin-bottom: 15px; text-align: center; }
+
+        .article-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 30px;
+            background: #fafafa;
+            border-right: 1px solid #eee;
+            /* 讓文章完全展開，不使用內部捲軸，像電子書 */
+            height: auto; 
+        }
+
+        .questions-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 30px;
+            background: #fff;
+        }
+
+        .article-content { 
+            font-size: 1.2em; line-height: 2; color: #2c3e50; 
+            text-align: justify;
+        }
+        .article-title { font-size: 1.6em; font-weight: bold; color: var(--primary-color); margin-bottom: 20px; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px;}
         
-        .sub-question-item { margin-bottom: 25px; border-bottom: 1px dashed #eee; padding-bottom: 20px; }
+        .sub-question-item { margin-bottom: 30px; border-bottom: 1px dashed #eee; padding-bottom: 20px; }
         .sub-question-item:last-child { border-bottom: none; }
-        .sub-q-text { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
+        .sub-q-text { font-size: 1.25em; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
         
         .option-list { list-style: none; padding: 0; }
-        .option-btn { width: 100%; padding: 12px; margin-bottom: 8px; background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 1.1em; text-align: left; transition: 0.2s; position: relative; }
+        .option-btn { width: 100%; padding: 15px; margin-bottom: 10px; background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 1.15em; text-align: left; transition: 0.2s; position: relative; }
         .option-btn:hover:not(:disabled) { border-color: var(--primary-color); background: #fce4ec; }
         .option-btn.selected { border-color: var(--primary-color); background: #fce4ec; font-weight: bold; }
         .option-btn.correct { background: #d4edda; border-color: var(--correct-color); color: #155724; }
@@ -193,20 +221,21 @@
         
         /* 圖片樣式 */
         .option-btn img { max-height: 150px; display: block; margin: 5px 0; }
-        .article-content img { max-width: 100%; height: auto; display: block; margin: 10px auto; }
+        .article-content img { max-width: 100%; height: auto; display: block; margin: 10px auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 
-        /* 解析區塊 */
-        .explanation-box { 
+        /* 獨立解析區塊 */
+        .single-explanation { 
             background: #fff3e0; /* 淺橘色 */
-            padding: 20px; 
+            padding: 15px; 
             border-radius: 8px; 
             border: 1px solid #ffe0b2; 
-            border-left: 6px solid #ff9800; 
-            margin-top: 25px; 
+            border-left: 5px solid #ff9800; 
+            margin-top: 15px; 
             display: none; 
             line-height: 1.6; 
             font-size: 1.1em; 
             color: #3e2723;
+            animation: fadeIn 0.5s;
         }
 
         /* --- Collection & History --- */
@@ -261,8 +290,13 @@
             
             /* AI Chat Mobile Styles */
             #ai-chat-window { width: 90%; right: 5%; bottom: 80px; height: 50vh; }
+
+            /* Reading Mode Mobile */
+            .question-box { flex-direction: column; }
+            .article-section { border-right: none; border-bottom: 1px solid #eee; }
         }
 
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
@@ -368,17 +402,16 @@
 
         <div id="question-container">
             <div class="question-box">
-                <div id="article-title" class="article-title"></div>
-                <div id="article-text" class="article-content"></div>
-                <div id="sub-questions-container"></div>
+                <div class="article-section">
+                    <div id="article-title" class="article-title"></div>
+                    <div id="article-text" class="article-content"></div>
+                </div>
+                <div class="questions-section">
+                    <div id="sub-questions-container"></div>
+                </div>
             </div>
         </div>
         
-        <div id="explanation" class="explanation-box">
-            <strong>💡 解析：</strong> <span id="explanation-text"></span>
-        </div>
-
-        <button id="submit-btn" class="btn" style="width: 100%; margin-top: 20px;" onclick="submitAnswers()">✅ 提交答案</button>
         <button id="next-btn" class="btn" style="display: none; width: 100%; margin-top: 20px;" onclick="nextQuestion()">下一篇 ➡️</button>
     </div>
 
@@ -465,8 +498,7 @@
             score: 0, // 累計答對的小題數
             totalSubQuestions: 0, // 該關卡總小題數
             currentIndex: 0, // 當前題組索引
-            userAnswers: {}, // { "1-1": "A", "1-2": "B" }
-            isSubmitted: false
+            pageAnsweredCount: 0 // 當前頁面已回答的小題數
         };
 
         const audioCorrect = new Audio('sounds/correct.mp3'); audioCorrect.volume = 0.4;
@@ -565,7 +597,6 @@
             // 檢查最後一關是否通過(若有分數且>=60)
             if(progress.scores[progress.maxLevel] >= 60) unlockedCount++;
             // 簡單算法：(已完成關卡數 / 總關卡數)
-            // 修正：只要有分數就算完成該關
             let completedLevels = Object.keys(progress.scores).length;
             let percent = Math.round((completedLevels / LEVEL_CONFIG.length) * 100);
             document.getElementById('overall-progress').innerText = `總進度：${percent}%`;
@@ -607,8 +638,7 @@
                 score: 0, // 累計答對小題數
                 totalSubQuestions: 0, // 該關卡總小題數計算
                 currentIndex: 0,
-                userAnswers: {},
-                isSubmitted: false
+                pageAnsweredCount: 0
             };
 
             // 計算該關卡總小題數
@@ -631,11 +661,9 @@
             const qData = currentQuizData[quizState.currentIndex];
             if(!qData) return finishQuiz();
             
-            // 重置狀態
-            quizState.isSubmitted = false;
-            document.getElementById('submit-btn').style.display = 'block';
+            // 重置本頁狀態
+            quizState.pageAnsweredCount = 0;
             document.getElementById('next-btn').style.display = 'none';
-            document.getElementById('explanation').style.display = 'none';
 
             // 更新進度條
             document.getElementById('current-q-num').innerText = quizState.currentIndex + 1;
@@ -652,6 +680,7 @@
             qData.subQuestions.forEach((subQ, idx) => {
                 const subDiv = document.createElement('div');
                 subDiv.className = 'sub-question-item';
+                subDiv.id = `subq-${subQ.id}`; // 增加ID方便定位
                 
                 // 題目文字
                 const qText = document.createElement('div');
@@ -666,111 +695,93 @@
                 subQ.options.forEach(opt => {
                     const btn = document.createElement('button');
                     btn.className = `option-btn opt-btn-${subQ.id}`; // 加入ID以便選取
-                    // 處理選項內的圖片
+                    
                     if(opt.includes('<img')) {
                         btn.innerHTML = opt;
                     } else {
                         btn.innerText = opt;
                     }
                     
-                    btn.onclick = () => selectOption(subQ.id, opt, btn);
+                    // 點擊立即觸發判斷邏輯
+                    btn.onclick = () => handleAnswerImmediate(subQ.id, opt, btn, subQ.ans, subQ.explanation);
                     optList.appendChild(btn);
                 });
                 
                 subDiv.appendChild(optList);
+
+                // 獨立解析區塊 (預設隱藏)
+                const expDiv = document.createElement('div');
+                expDiv.className = 'single-explanation';
+                expDiv.id = `exp-${subQ.id}`;
+                // 預填解析內容，稍後顯示
+                expDiv.innerHTML = `<strong>💡 解析：</strong>${subQ.explanation || '略'}`;
+                subDiv.appendChild(expDiv);
+
                 container.appendChild(subDiv);
             });
         }
 
-        function selectOption(qId, value, btnElement) {
-            if(quizState.isSubmitted) return;
-            
-            // 存入用戶答案（取選項前幾個字元作為判斷，如 (A)）
-            // 這裡假設答案是 A, B, C, D，選項格式是 "(A) ..."
-            // 為了比對，我們取括號內的字母或直接存完整值，稍後處理
-            let ansKey = "";
-            if(value.includes("(A)") || value.includes("images/q10_a")) ansKey = "A";
-            else if(value.includes("(B)") || value.includes("images/q10_b")) ansKey = "B";
-            else if(value.includes("(C)") || value.includes("images/q10_c")) ansKey = "C";
-            else if(value.includes("(D)") || value.includes("images/q10_d")) ansKey = "D";
-            // 處理非標準選項，如第13題的中文選項
-            else ansKey = value;
-
-            quizState.userAnswers[qId] = ansKey;
-
-            // UI 更新
+        function handleAnswerImmediate(qId, selectedValue, btnElement, correctAns, explanationText) {
+            // 鎖定該題所有按鈕
             const allBtns = document.querySelectorAll(`.opt-btn-${qId}`);
-            allBtns.forEach(b => b.classList.remove('selected'));
-            btnElement.classList.add('selected');
-        }
+            allBtns.forEach(b => b.disabled = true);
 
-        function submitAnswers() {
-            const qData = currentQuizData[quizState.currentIndex];
-            
-            // 檢查是否所有題目都已作答
-            let allAnswered = true;
-            qData.subQuestions.forEach(sq => {
-                if(!quizState.userAnswers[sq.id]) allAnswered = false;
-            });
-            
-            if(!allAnswered) {
-                alert("請回答所有問題後再提交！");
-                return;
-            }
-            
-            quizState.isSubmitted = true;
-            
-            // 核對答案與計分
-            let pageCorrectCount = 0;
-            
-            qData.subQuestions.forEach(sq => {
-                const userAns = quizState.userAnswers[sq.id];
-                const correctAns = sq.ans;
-                const btns = document.querySelectorAll(`.opt-btn-${sq.id}`);
-                
-                // 標記按鈕顏色
-                btns.forEach(btn => {
-                    btn.disabled = true; // 鎖定
-                    let btnKey = "";
-                    const text = btn.innerText || btn.innerHTML;
-                    if(text.includes("(A)") || text.includes("q10_a")) btnKey = "A";
-                    else if(text.includes("(B)") || text.includes("q10_b")) btnKey = "B";
-                    else if(text.includes("(C)") || text.includes("q10_c")) btnKey = "C";
-                    else if(text.includes("(D)") || text.includes("q10_d")) btnKey = "D";
-                    else btnKey = text; // 純文字選項
+            // 判斷答案 Key (A, B, C, D)
+            let userKey = "";
+            if(selectedValue.includes("(A)") || selectedValue.includes("images/q010_a")) userKey = "A";
+            else if(selectedValue.includes("(B)") || selectedValue.includes("images/q010_b")) userKey = "B";
+            else if(selectedValue.includes("(C)") || selectedValue.includes("images/q010_c")) userKey = "C";
+            else if(selectedValue.includes("(D)") || selectedValue.includes("images/q010_d")) userKey = "D";
+            else userKey = selectedValue;
 
-                    if(btnKey === correctAns) btn.classList.add('correct');
-                    if(btnKey === userAns && btnKey !== correctAns) btn.classList.add('wrong');
-                });
-
-                if(userAns === correctAns) {
-                    quizState.score++;
-                    pageCorrectCount++;
-                }
-            });
-
-            // 音效
-            if(pageCorrectCount === qData.subQuestions.length) {
+            // 視覺回饋
+            let isCorrect = (userKey === correctAns);
+            
+            // 對錯音效與計分
+            if(isCorrect) {
+                btnElement.classList.add('correct');
+                quizState.score++;
                 audioCorrect.play().catch(()=>{});
-                confetti({ particleCount: 50, origin: { y: 0.8 } });
+                // 簡單特效
+                confetti({ particleCount: 30, origin: { y: 0.8 }, spread: 50 });
             } else {
+                btnElement.classList.add('wrong');
                 audioFail.play().catch(()=>{});
+                // 標示正確答案
+                allBtns.forEach(b => {
+                    let bKey = "";
+                    let bText = b.innerText || b.innerHTML;
+                    if(bText.includes("(A)") || bText.includes("q010_a")) bKey = "A";
+                    else if(bText.includes("(B)") || bText.includes("q010_b")) bKey = "B";
+                    else if(bText.includes("(C)") || bText.includes("q010_c")) bKey = "C";
+                    else if(bText.includes("(D)") || bText.includes("q010_d")) bKey = "D";
+                    else bKey = bText;
+
+                    if(bKey === correctAns) b.classList.add('correct');
+                });
             }
 
-            // 顯示解析
-            document.getElementById('explanation-text').innerHTML = qData.explanation || "略";
-            document.getElementById('explanation').style.display = 'block';
-            
-            // 切換按鈕
-            document.getElementById('submit-btn').style.display = 'none';
-            document.getElementById('next-btn').style.display = 'block';
+            // 立即顯示解析
+            const expDiv = document.getElementById(`exp-${qId}`);
+            if(expDiv) expDiv.style.display = 'block';
+
+            // 檢查本頁進度
+            quizState.pageAnsweredCount++;
+            const currentQData = currentQuizData[quizState.currentIndex];
+            if(quizState.pageAnsweredCount >= currentQData.subQuestions.length) {
+                document.getElementById('next-btn').style.display = 'block';
+                // 自動捲動到底部方便看到下一頁按鈕
+                setTimeout(() => {
+                    document.getElementById('next-btn').scrollIntoView({behavior: "smooth"});
+                }, 100);
+            }
         }
 
         function nextQuestion() {
             quizState.currentIndex++;
-            // 清空本頁答案紀錄以免影響下一頁邏輯(雖然是ID base, 但保險起見)
-            quizState.userAnswers = {}; 
             loadQuestion();
+            // 捲動回頂部
+            document.querySelector('.container-box').scrollIntoView({behavior: 'smooth'});
         }
 
         function finishQuiz() {
