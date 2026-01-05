@@ -497,16 +497,8 @@
         const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
 
         // 設定與全域變數
-        // 修改點：Level config updated to 56 levels (1-55: 5 questions, 56: 6 questions)
-        const LEVEL_CONFIG = [
-            5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 1-10
-            5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 11-20
-            5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 21-30
-            5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 31-40
-            5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 41-50
-            5, 5, 5, 5, 5,                // 51-55
-            6                             // 56
-        ];
+        // 修改點：Level config updated to 18 levels of 5 questions each (last one 4)
+        const LEVEL_CONFIG = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4];
         const YOUTUBE_PLAYLIST = ['iLAS0vy7-78', '5zeyr-_G_4w', 'aZXJATkkDoA', 'UKbZ4r88z3Q', 'aGZk0nEBWv4', 'advioIb8-gE'];
         // LocalStorage 前綴
         const APP_PREFIX = 'ChineseQuizSet3-1_';
