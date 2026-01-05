@@ -497,8 +497,7 @@
         const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
 
         // 設定與全域變數
-        // 修改點：Level config updated to 13 levels of 5 questions each = 65 total
-        const LEVEL_CONFIG = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+        const LEVEL_CONFIG = [5, 5, 5, 5, 5, 2];
         const YOUTUBE_PLAYLIST = ['iLAS0vy7-78', '5zeyr-_G_4w', 'aZXJATkkDoA', 'UKbZ4r88z3Q', 'aGZk0nEBWv4', 'advioIb8-gE'];
         // LocalStorage 前綴
         const APP_PREFIX = 'ChineseQuizSet3-1_';
@@ -921,7 +920,7 @@
                 if(finalScore > oldScore) progress.scores[quizState.level] = finalScore;
                 else if (!progress.scores[quizState.level]) progress.scores[quizState.level] = finalScore; // 確保有紀錄
                 
-                // 修改點：只要完成即可解鎖下一關
+                // 修改點：取消分數限制，只要完成即可解鎖下一關
                 let unlocked = false;
                 if(quizState.level === progress.maxLevel && quizState.level < LEVEL_CONFIG.length) {
                     progress.maxLevel++;
