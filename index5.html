@@ -204,13 +204,11 @@
         }
         .article-title { font-size: 1.6em; font-weight: bold; color: var(--primary-color); margin: 0; }
         
-        /* 修改點：愛心符號加大 */
         .fav-heart {
-            font-size: 2em; cursor: pointer; color: #ccc; transition: 0.3s;
+            font-size: 1.5em; cursor: pointer; color: #ccc; transition: 0.3s;
         }
         .fav-heart.active { color: var(--favorite-color); }
-        .fav-heart:hover { transform: scale(1.1); }
-        .fav-heart:active { transform: scale(0.9); }
+        .fav-heart:hover { transform: scale(1.2); }
 
         .sub-question-item { margin-bottom: 30px; border-bottom: 1px dashed #eee; padding-bottom: 20px; }
         .sub-question-item:last-child { border-bottom: none; }
@@ -628,11 +626,9 @@
                 if (level <= progress.maxLevel) {
                     const score = progress.scores[level];
                     let icon = '📖'; 
-                    if (score !== undefined) {
-                        if (score >= 90) icon = '🥇'; 
-                        else if (score >= 70) icon = '🥈';
-                        else icon = '🥉';
-                    }
+                    if (score >= 90) icon = '🥇'; 
+                    else if (score >= 70) icon = '🥈';
+                    else if (score >= 60) icon = '🥉';
                     
                     // 檢查是否有未完成的進度
                     const savedKey = getUserKey('progress_level_' + level);
@@ -914,15 +910,11 @@
             
             if(quizState.mode === 'level') {
                 let progress = JSON.parse(localStorage.getItem(getUserKey('quizProgress'))) || { maxLevel: 1, scores: {} };
-                
-                // 更新該關卡分數
                 let oldScore = progress.scores[quizState.level] || 0;
                 if(finalScore > oldScore) progress.scores[quizState.level] = finalScore;
-                else if (!progress.scores[quizState.level]) progress.scores[quizState.level] = finalScore; // 確保有紀錄
                 
-                // 修改點：取消分數限制，只要完成即可解鎖下一關
                 let unlocked = false;
-                if(quizState.level === progress.maxLevel && quizState.level < LEVEL_CONFIG.length) {
+                if(finalScore >= 60 && quizState.level === progress.maxLevel && quizState.level < LEVEL_CONFIG.length) {
                     progress.maxLevel++;
                     unlocked = true;
                 }
@@ -1075,7 +1067,7 @@
 
             for(let i=1; i<=LEVEL_CONFIG.length; i++) {
                 const num = i<10?`0${i}`:`${i}`;
-                const unlocked = (progress.scores[i] !== undefined); // 修改點：只要有完成（有分數）就顯示圖鑑
+                const unlocked = (progress.scores[i] >= 80); 
                 const item = document.createElement('div');
                 item.className = `card-item ${unlocked?'':'locked'}`;
                 
@@ -1083,7 +1075,7 @@
                     item.innerHTML = `<img src="images/card_${num}.jpg" onerror="this.src='https://via.placeholder.com/150?text=Card${num}'">`;
                     item.onclick = () => openCardModal(`images/card_${num}.jpg`, `意象卡 #${num}`);
                 } else {
-                    item.innerHTML = `<span style="font-size:2em;">🔒</span><br>關卡 ${i}`;
+                    item.innerHTML = `<span style="font-size:2em;">🔒</span><br>關卡 ${i}<br><small>(需80分)</small>`;
                 }
                 grid.appendChild(item);
             }
