@@ -460,11 +460,11 @@
     <!-- AI Chat Window -->
     <div id="ai-chat-window">
         <div class="ai-header">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span>🤖 AI 書僮</span>
+            <span>🤖 AI 書僮</span>
+            <div style="display:flex; gap:10px;">
                 <span class="ai-header-close" onclick="resetAiKey()" title="重設 API Key" style="font-size: 0.9em;">🔑</span>
+                <span class="ai-header-close" onclick="toggleChatWindow()">×</span>
             </div>
-            <span class="ai-header-close" onclick="toggleChatWindow()">×</span>
         </div>
         <div id="ai-messages" class="ai-messages">
             <div class="ai-msg bot">你好！我是你的 AI 書僮，有什麼問題都可以問我喔！</div>
@@ -481,8 +481,8 @@
         const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
 
         // 設定與全域變數
-        // 總共有 27 篇題組 (1-27)，分為 6 個關卡：5, 5, 5, 5, 5, 2
-        const LEVEL_CONFIG = [5, 5, 5, 5, 5, 2];
+        // 總共有42篇題組，分為9個關卡，前8關每關5篇，第9關2篇
+        const LEVEL_CONFIG = [5, 5, 5, 5, 5, 5, 5, 5, 2];
         const YOUTUBE_PLAYLIST = ['iLAS0vy7-78', '5zeyr-_G_4w', 'aZXJATkkDoA', 'UKbZ4r88z3Q', 'aGZk0nEBWv4', 'advioIb8-gE'];
         // LocalStorage 前綴
         const APP_PREFIX = 'ChineseQuizSet3-1_';
