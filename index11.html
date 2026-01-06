@@ -163,8 +163,8 @@
         .btn-orange { background: #e91e63; } .btn-orange:hover { background: #c2185b; }
 
         /* --- Standard Quiz Mode (Reading Comprehension) --- */
-        .quiz-header { display: none; } /* 修改: 隱藏舊標題區，釋放空間 */
-        
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        /* 修改: 隱藏進度條容器 (雖然後面JS已移除內容，這裡直接 display: none 確保不佔位) */
         .progress-bar-container { display: none; width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 20px; }
         .progress-bar-fill { height: 100%; background: var(--secondary-color); width: 0%; transition: width 0.3s; }
         
@@ -179,7 +179,7 @@
             overflow: hidden;
             border-top: 5px solid var(--primary-color);
             /* 修改 1: 設定高度與啟用滾動 */
-            height: 80vh; /* 稍微增加高度利用空間 */
+            height: 75vh; 
             align-items: stretch;
         }
 
@@ -301,26 +301,6 @@
         .ai-send-btn { background: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
         .ai-send-btn:hover { background: #ad1457; }
 
-        /* 新增：懸浮下一篇按鈕樣式 */
-        #next-btn {
-            display: none;
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: auto;
-            padding: 15px 30px;
-            z-index: 10000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            font-size: 1.2em;
-            margin-top: 0;
-            animation: bounceIn 0.5s;
-        }
-        @keyframes bounceIn {
-            0% { transform: scale(0); opacity: 0; }
-            60% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-
         /* RWD */
         @media (max-width: 768px) {
             #level-screen-content { flex-direction: column; }
@@ -361,13 +341,12 @@
     <div id="music-player-bar">
         <div class="player-left">
             <div class="player-icon">🎵</div>
-            <!-- 修改：測驗導覽控制列 (重新排序) -->
-            <div id="quiz-nav-info" style="display:none; align-items:center; gap:15px; margin-left:15px;">
-                <span id="nav-level-title" style="font-weight:bold; color:var(--primary-color); font-size: 1.1em;"></span>
-                <span style="font-weight:bold; color:#555; white-space: nowrap;">
-                    <span id="nav-current-q">1</span> / <span id="nav-total-q">5</span>
-                </span>
+            <!-- 新增：測驗導覽控制列 (置頂左側) -->
+            <div id="quiz-nav-info" style="display:none; align-items:center; gap:10px; margin-left:15px;">
                 <button class="btn btn-gray" style="padding: 5px 15px; font-size: 0.9em;" onclick="exitQuiz()">🏠 離開</button>
+                <span style="font-weight:bold; color:var(--primary-color); white-space: nowrap;">
+                    進度: <span id="nav-current-q">1</span> / <span id="nav-total-q">5</span>
+                </span>
             </div>
         </div>
         
@@ -472,8 +451,7 @@
             </div>
         </div>
         
-        <!-- 修改: 按鈕移至右下角懸浮 (CSS處理) -->
-        <button id="next-btn" class="btn" onclick="nextQuestion()">下一篇 ➡️</button>
+        <button id="next-btn" class="btn" style="display: none; width: 100%; margin-top: 20px;" onclick="nextQuestion()">下一篇 ➡️</button>
     </div>
 
     <!-- 結算畫面 -->
@@ -786,8 +764,6 @@
             else if (quizState.mode === 'mistakes') title = `📕 錯題複習`;
             
             document.getElementById('level-title').innerText = title;
-            // 新增: 更新導覽列關卡標題
-            document.getElementById('nav-level-title').innerText = title;
 
             // Show Nav Info & Update Total
             document.getElementById('quiz-nav-info').style.display = 'flex';
@@ -948,7 +924,7 @@
             if(quizState.pageAnsweredCount >= currentQData.subQuestions.length) {
                 document.getElementById('next-btn').style.display = 'block';
                 setTimeout(() => {
-                    // document.getElementById('next-btn').scrollIntoView({behavior: "smooth"}); // 不再需要 Scroll
+                    document.getElementById('next-btn').scrollIntoView({behavior: "smooth"});
                 }, 100);
             }
         }
