@@ -80,7 +80,7 @@
             background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05);
             backdrop-filter: blur(10px); position: relative; margin-bottom: 20px;
-            max-height: calc(100vh - 180px); /* 稍微縮小最大高度，增加底部緩衝 */
+            max-height: calc(100vh - 140px); /* 扣除 Header 和 Padding 的空間 */
             overflow-y: auto; /* 內容過長時，卡片內部捲動 */
         }
 
@@ -132,7 +132,7 @@
             display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 20px; justify-items: center;
             /* 修改: 增加底部留白，避免最後一排關卡被切到 */
-            padding-bottom: 120px; 
+            padding-bottom: 80px; 
         }
         .level-grid-btn {
             width: 100%; aspect-ratio: 1; min-height: 120px; 
@@ -188,8 +188,8 @@
             flex-wrap: wrap; /* RWD */
             overflow: hidden;
             border-top: 5px solid var(--primary-color);
-            /* 修改: 縮小高度，避免貼底 (100vh - 240px)，提供更多底部緩衝 */
-            height: calc(100vh - 240px); 
+            /* 修改: 增加高度，減少留白 (100vh - 160px) 讓它佔據更多空間 */
+            height: calc(100vh - 160px); 
             align-items: stretch;
         }
 
@@ -202,8 +202,8 @@
             height: 100%;
             overflow-y: auto;
             scrollbar-width: thin;
-            /* 修改: 增加底部內距，確保最後一行字可見且不被按鈕遮擋 */
-            padding-bottom: 120px;
+            /* 修改: 大幅增加底部內距，確保最後一行字可見且不被按鈕遮擋 */
+            padding-bottom: 160px;
         }
 
         .questions-section {
@@ -214,8 +214,8 @@
             height: 100%;
             overflow-y: auto;
             scrollbar-width: thin;
-            /* 修改: 增加底部內距 */
-            padding-bottom: 120px;
+            /* 修改: 大幅增加底部內距 */
+            padding-bottom: 160px;
         }
 
         .article-content { 
