@@ -21,15 +21,9 @@
             --header-height: 100px;
         }
 
-        /* 修改: 鎖定 Body 捲動 */
-        html, body {
-            height: 100%;
-            overflow: hidden; /* 移除最外側滑動條 */
-        }
-
         body { 
             font-family: 'Noto Sans TC', "Microsoft JhengHei", Arial, sans-serif; 
-            max-width: 98vw; 
+            max-width: 98vw; /* 修改 2: 擴展至 98vw */
             margin: 0 auto; 
             padding: calc(var(--header-height) + 20px) 20px 20px 20px; 
             background-color: var(--bg-color); 
@@ -40,7 +34,7 @@
             background-position: 0 0, 25px 25px;
             background-size: 50px 50px;
             background-attachment: fixed;
-            box-sizing: border-box; /* 確保 padding 不會撐開 width */
+            min-height: 100vh;
         }
 
         h1, h2, h3 { text-align: center; color: var(--text-color); }
@@ -54,6 +48,7 @@
             justify-content: space-between; padding: 0 15px; box-sizing: border-box;
             z-index: 10000;
         }
+        /* 修改: 增加 align-items */
         .player-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
         .player-right { flex: 1; display: flex; justify-content: flex-end; }
         .player-icon { font-size: 1.5em; background: #fce4ec; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid var(--primary-color); color: var(--primary-color);}
@@ -75,13 +70,10 @@
         .mode-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
 
         /* --- 容器通用 --- */
-        /* 修改: 限制最大高度並允許內部捲動，確保內容不會被切掉且 Body 不捲動 */
         .container-box {
             background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05);
             backdrop-filter: blur(10px); position: relative; margin-bottom: 20px;
-            max-height: calc(100vh - 140px); /* 扣除 Header 和 Padding 的空間 */
-            overflow-y: auto; /* 內容過長時，卡片內部捲動 */
         }
 
         /* --- Welcome Screen --- */
@@ -171,7 +163,7 @@
         .btn-orange { background: #e91e63; } .btn-orange:hover { background: #c2185b; }
 
         /* --- Standard Quiz Mode (Reading Comprehension) --- */
-        .quiz-header { display: none; } 
+        .quiz-header { display: none; } /* 修改: 隱藏舊標題區，釋放空間 */
         
         .progress-bar-container { display: none; width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 20px; }
         .progress-bar-fill { height: 100%; background: var(--secondary-color); width: 0%; transition: width 0.3s; }
@@ -186,8 +178,8 @@
             flex-wrap: wrap; /* RWD */
             overflow: hidden;
             border-top: 5px solid var(--primary-color);
-            /* 修改: 精確計算高度，避免雙重捲軸 (100vh - 200px 約為滿版減去 padding 和 header) */
-            height: calc(100vh - 200px); 
+            /* 修改 1: 設定高度與啟用滾動 */
+            height: 80vh; /* 稍微增加高度利用空間 */
             align-items: stretch;
         }
 
@@ -197,9 +189,10 @@
             padding: 30px;
             background: #fafafa;
             border-right: 1px solid #eee;
+            /* 修改 1: 左右獨立滑動 */
             height: 100%;
             overflow-y: auto;
-            scrollbar-width: thin; 
+            scrollbar-width: thin; /* Firefox */
         }
 
         .questions-section {
@@ -207,9 +200,10 @@
             min-width: 300px;
             padding: 30px;
             background: #fff;
+            /* 修改 1: 左右獨立滑動 */
             height: 100%;
             overflow-y: auto;
-            scrollbar-width: thin;
+            scrollbar-width: thin; /* Firefox */
         }
 
         .article-content { 
@@ -222,6 +216,7 @@
         }
         .article-title { font-size: 1.6em; font-weight: bold; color: var(--primary-color); margin: 0; }
         
+        /* 修改點：愛心符號加大 */
         .fav-heart {
             font-size: 2em; cursor: pointer; color: #ccc; transition: 0.3s;
         }
