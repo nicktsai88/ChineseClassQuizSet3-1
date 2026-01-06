@@ -48,8 +48,7 @@
             justify-content: space-between; padding: 0 15px; box-sizing: border-box;
             z-index: 10000;
         }
-        /* 修改: 增加 align-items */
-        .player-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+        .player-left { flex: 1; display: flex; justify-content: flex-start; }
         .player-right { flex: 1; display: flex; justify-content: flex-end; }
         .player-icon { font-size: 1.5em; background: #fce4ec; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid var(--primary-color); color: var(--primary-color);}
 
@@ -164,8 +163,7 @@
 
         /* --- Standard Quiz Mode (Reading Comprehension) --- */
         .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        /* 修改: 隱藏進度條容器 (雖然後面JS已移除內容，這裡直接 display: none 確保不佔位) */
-        .progress-bar-container { display: none; width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 20px; }
+        .progress-bar-container { width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 20px; }
         .progress-bar-fill { height: 100%; background: var(--secondary-color); width: 0%; transition: width 0.3s; }
         
         .question-box { 
@@ -341,13 +339,6 @@
     <div id="music-player-bar">
         <div class="player-left">
             <div class="player-icon">🎵</div>
-            <!-- 新增：測驗導覽控制列 (置頂左側) -->
-            <div id="quiz-nav-info" style="display:none; align-items:center; gap:10px; margin-left:15px;">
-                <button class="btn btn-gray" style="padding: 5px 15px; font-size: 0.9em;" onclick="exitQuiz()">🏠 離開</button>
-                <span style="font-weight:bold; color:var(--primary-color); white-space: nowrap;">
-                    進度: <span id="nav-current-q">1</span> / <span id="nav-total-q">5</span>
-                </span>
-            </div>
         </div>
         
         <div id="yt-wrapper">
@@ -431,11 +422,18 @@
     <div id="quiz-content" class="container-box fade-in" style="display: none;">
         <div class="quiz-header">
             <h3 id="level-title" style="margin:0; color:var(--primary-color);">關卡 X</h3>
-            <!-- 修改: 已移除舊的「離開」按鈕 -->
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-gray btn-sm" style="padding: 5px 10px;" onclick="exitQuiz()">🏠 離開</button>
+            </div>
         </div>
         
-        <!-- 修改: 已移除進度條與舊的進度文字 -->
-        
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar-fill"></div>
+        </div>
+        <div style="text-align: right; margin-bottom: 10px; font-weight: bold; color: #777;">
+            文章進度: <span id="current-q-num">1</span> / <span id="total-q-num">5</span>
+        </div>
+
         <div id="question-container">
             <div class="question-box">
                 <div class="article-section">
@@ -620,10 +618,6 @@
         }
 
         function goToDashboard() {
-            // Hide Nav Info (if active)
-            const navInfo = document.getElementById('quiz-nav-info');
-            if(navInfo) navInfo.style.display = 'none';
-
             hideAllScreens();
             document.getElementById('level-screen').style.display = 'block';
             document.getElementById('display-name').innerText = userName;
@@ -764,11 +758,7 @@
             else if (quizState.mode === 'mistakes') title = `📕 錯題複習`;
             
             document.getElementById('level-title').innerText = title;
-
-            // Show Nav Info & Update Total
-            document.getElementById('quiz-nav-info').style.display = 'flex';
-            document.getElementById('nav-total-q').innerText = currentQuizData.length;
-
+            document.getElementById('total-q-num').innerText = currentQuizData.length;
             loadQuestion();
         }
 
@@ -779,8 +769,9 @@
             // UI 重置
             document.getElementById('next-btn').style.display = 'none';
 
-            // 更新置頂進度 (Navbar)
-            document.getElementById('nav-current-q').innerText = quizState.currentIndex + 1;
+            // 更新進度條
+            document.getElementById('current-q-num').innerText = quizState.currentIndex + 1;
+            document.getElementById('progress-bar').style.width = ((quizState.currentIndex) / currentQuizData.length * 100) + '%';
             
             // 顯示文章
             document.getElementById('article-title').innerText = qData.title;
@@ -946,9 +937,6 @@
             }
 
             document.getElementById('quiz-content').style.display = 'none';
-            // Hide Nav Info
-            document.getElementById('quiz-nav-info').style.display = 'none';
-            
             document.getElementById('score-box').style.display = 'block';
             
             const finalScore = Math.round((quizState.score / quizState.totalSubQuestions) * 100);
