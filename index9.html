@@ -23,7 +23,7 @@
 
         body { 
             font-family: 'Noto Sans TC', "Microsoft JhengHei", Arial, sans-serif; 
-            max-width: 98vw; /* 修改 2: 擴展至 98vw */
+            max-width: 1200px; 
             margin: 0 auto; 
             padding: calc(var(--header-height) + 20px) 20px 20px 20px; 
             background-color: var(--bg-color); 
@@ -176,9 +176,6 @@
             flex-wrap: wrap; /* RWD */
             overflow: hidden;
             border-top: 5px solid var(--primary-color);
-            /* 修改 1: 設定高度與啟用滾動 */
-            height: 75vh; 
-            align-items: stretch;
         }
 
         .article-section {
@@ -187,10 +184,7 @@
             padding: 30px;
             background: #fafafa;
             border-right: 1px solid #eee;
-            /* 修改 1: 左右獨立滑動 */
-            height: 100%;
-            overflow-y: auto;
-            scrollbar-width: thin; /* Firefox */
+            height: auto; 
         }
 
         .questions-section {
@@ -198,10 +192,6 @@
             min-width: 300px;
             padding: 30px;
             background: #fff;
-            /* 修改 1: 左右獨立滑動 */
-            height: 100%;
-            overflow-y: auto;
-            scrollbar-width: thin; /* Firefox */
         }
 
         .article-content { 
@@ -313,20 +303,8 @@
             #ai-chat-window { width: 90%; right: 5%; bottom: 80px; height: 50vh; }
 
             /* Reading Mode Mobile */
-            .question-box { 
-                flex-direction: column;
-                height: auto; /* 手機版重置高度 */ 
-            }
-            .article-section { 
-                border-right: none; 
-                border-bottom: 1px solid #eee;
-                height: auto; /* 手機版重置高度 */
-                overflow-y: visible; 
-            }
-            .questions-section {
-                height: auto; /* 手機版重置高度 */
-                overflow-y: visible;
-            }
+            .question-box { flex-direction: column; }
+            .article-section { border-right: none; border-bottom: 1px solid #eee; }
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
