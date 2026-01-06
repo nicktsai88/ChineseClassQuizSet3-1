@@ -154,7 +154,11 @@
         .lvl-score { font-size: 0.9em; font-weight: bold; color: var(--correct-color); background: #e8f5e9; padding: 2px 8px; border-radius: 10px; margin-top: 5px; }
         .lvl-label { font-size: 1.2em; font-weight: bold; font-family: "KaiTi", "BiauKai", serif;}
         
-        /* Dashboard 底部工具列 (已移除，改至上方) */
+        /* Dashboard 底部工具列 */
+        .dashboard-tools {
+            margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            padding-top: 20px; border-top: 1px solid #ddd;
+        }
         
         /* --- Button Styles --- */
         .btn { padding: 10px 24px; border-radius: 25px; border: none; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: #fff; background: var(--primary-color); display: inline-flex; align-items: center; gap: 5px;}
@@ -165,10 +169,6 @@
         .btn-gray { background: #95a5a6; } .btn-gray:hover { background: #7f8c8d; }
         .btn-blue { background: #00838f; } .btn-blue:hover { background: #006064; }
         .btn-orange { background: #e91e63; } .btn-orange:hover { background: #c2185b; }
-
-        /* 新增: 導覽列小按鈕 */
-        .btn-sm { padding: 5px 15px; font-size: 0.9em; box-shadow: none; border: 1px solid rgba(255,255,255,0.3); }
-        .btn-sm:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
         /* --- Standard Quiz Mode (Reading Comprehension) --- */
         .quiz-header { display: none; } 
@@ -359,9 +359,6 @@
                 height: auto; /* 手機版重置高度 */
                 overflow-y: visible;
             }
-            
-            /* 手機版隱藏導覽列文字 */
-            .nav-text { display: none; }
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -374,16 +371,7 @@
     <div id="music-player-bar">
         <div class="player-left">
             <div class="player-icon">🎵</div>
-            
-            <!-- 新增: 儀表板導覽按鈕 (僅在關卡選擇畫面顯示) -->
-            <div id="dashboard-nav-btns" style="display:none; align-items:center; gap:10px; margin-left:20px;">
-                <button class="btn btn-sm btn-red" onclick="showMistakes()">📕 <span class="nav-text">錯題本</span></button>
-                <button class="btn btn-sm btn-pink" onclick="showFavorites()">⭐ <span class="nav-text">我的最愛</span></button>
-                <button class="btn btn-sm btn-green" onclick="showHistory()">🏆 <span class="nav-text">金榜</span></button>
-                <button class="btn btn-sm btn-gray" onclick="logout()">🚪 <span class="nav-text">登出</span></button>
-            </div>
-
-            <!-- 測驗導覽控制列 (重新排序) -->
+            <!-- 修改：測驗導覽控制列 (重新排序) -->
             <div id="quiz-nav-info" style="display:none; align-items:center; gap:15px; margin-left:15px;">
                 <span id="nav-level-title" style="font-weight:bold; color:var(--primary-color); font-size: 1.1em;"></span>
                 <span style="font-weight:bold; color:#555; white-space: nowrap;">
@@ -461,7 +449,13 @@
             </div>
         </div>
 
-        <!-- 底部工具列 (已移除) -->
+        <!-- 底部工具列 -->
+        <div class="dashboard-tools">
+            <button id="btn-mistake" class="btn btn-red" onclick="showMistakes()">📕 錯題本</button>
+            <button class="btn btn-pink" onclick="showFavorites()">⭐ 我的最愛</button>
+            <button class="btn btn-green" onclick="showHistory()">🏆 金榜</button>
+            <button class="btn btn-gray" onclick="logout()">🚪 登出</button>
+        </div>
     </div>
 
     <!-- 標準測驗介面 (Reading Comprehension) -->
@@ -662,10 +656,6 @@
             const navInfo = document.getElementById('quiz-nav-info');
             if(navInfo) navInfo.style.display = 'none';
 
-            // Show Dashboard Nav Btns
-            const dashBtns = document.getElementById('dashboard-nav-btns');
-            if(dashBtns) dashBtns.style.display = 'flex';
-
             hideAllScreens();
             document.getElementById('level-screen').style.display = 'block';
             document.getElementById('display-name').innerText = userName;
@@ -799,11 +789,6 @@
 
         function loadQuizUI() {
             hideAllScreens();
-            
-            // Hide Dashboard Nav Btns
-            const dashBtns = document.getElementById('dashboard-nav-btns');
-            if(dashBtns) dashBtns.style.display = 'none';
-
             document.getElementById('quiz-content').style.display = 'block';
             let title = "";
             if (quizState.mode === 'level') title = `📖 關卡 ${quizState.level}`;
