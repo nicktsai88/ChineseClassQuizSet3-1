@@ -55,21 +55,17 @@
             z-index: 10000;
         }
         .player-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
-        .player-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; }
+        .player-right { flex: 1; display: flex; justify-content: flex-end; }
         .player-icon { font-size: 1.5em; background: #fce4ec; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid var(--primary-color); color: var(--primary-color);}
 
-        /* 新增：曲名顯示樣式 */
-        .track-info {
-            margin-right: 15px;
-            font-size: 0.9em;
-            font-weight: bold;
-            color: var(--primary-color);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px; /* 限制寬度避免擠壓按鈕 */
+        #yt-wrapper {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            width: 144px; height: 81px; background: #000; border: 2px solid var(--text-color);
+            border-radius: 4px; overflow: hidden; transition: all 0.3s ease; z-index: 5;
         }
-
+        .yt-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 20; }
+        #yt-wrapper.video-hidden { width: 0; height: 0; border: none; opacity: 0; }
+        
         .player-controls { display: flex; align-items: center; gap: 8px; }
         .ctrl-btn { background: none; border: none; cursor: pointer; color: #7f8c8d; font-size: 1.4em; padding: 5px; }
         .ctrl-btn:hover, .ctrl-btn.active { color: var(--primary-color); }
@@ -344,9 +340,9 @@
             .card-actions { top: 10px; right: 10px; }
             #music-player-bar { height: 60px; padding: 0 10px; }
             body { padding-top: 80px; }
+            #yt-wrapper { display: none; position: fixed; bottom: 10px; right: 10px; width: 120px; height: 67px; top: auto; left: auto; transform: none; }
+            #yt-wrapper.mobile-visible { display: block; }
             
-            .track-info { max-width: 100px; font-size: 0.8em; }
-
             /* AI Chat Mobile Styles */
             #ai-chat-window { width: 90%; right: 5%; bottom: 80px; height: 50vh; }
 
@@ -399,13 +395,12 @@
             </div>
         </div>
         
-        <!-- 隱藏的音訊標籤 -->
-        <audio id="bg-music" preload="auto"></audio>
+        <div id="yt-wrapper">
+            <div id="yt-player"></div>
+            <div class="yt-overlay"></div>
+        </div>
         
         <div class="player-right">
-            <!-- 顯示曲名 -->
-            <span id="track-name" class="track-info">載入中...</span>
-
             <div class="player-controls">
                 <button class="ctrl-btn" onclick="prevTrack()">⏮</button>
                 <button id="main-play-btn" class="ctrl-btn" onclick="togglePlay()">▶</button>
@@ -414,6 +409,8 @@
                 <div class="volume-container">
                     <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="30" oninput="setVolume(this.value)">
                 </div>
+
+                <button id="toggle-video-btn" class="ctrl-btn active" onclick="toggleVideoDisplay()">👁️</button>
                 
                 <!-- AI Button -->
                 <button id="ai-btn" class="ctrl-btn" onclick="toggleChatWindow()" title="AI 書僮">🤖</button>
@@ -558,14 +555,8 @@
         </div>
     </div>
 
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        // 音樂設定 (請修改此處)
-        const MUSIC_CONFIG = {
-            username: 'Hsu-Chih-Hsiang', // 請修改為您的 GitHub 帳號
-            repo: 'classical-poetry-math', // 請修改為您的 Repo 名稱
-            folder: 'music' // 音樂檔案資料夾名稱
-        };
-
         // AI Configuration
         const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
 
@@ -580,18 +571,16 @@
             5, 5, 5, 5, 5,                // 51-55
             6                             // 56
         ];
-        
+        const YOUTUBE_PLAYLIST = ['iLAS0vy7-78', '5zeyr-_G_4w', 'aZXJATkkDoA', 'UKbZ4r88z3Q', 'aGZk0nEBWv4', 'advioIb8-gE'];
         // LocalStorage 前綴
         const APP_PREFIX = 'ChineseQuizSet3-1_';
         
+        let player, isPlayerReady = false, isPlaying = false;
         let allQuestions = [], currentQuizData = [];
         let userName = "", currentAvatar = "Chris.png";
         
-        // 音樂播放器變數
-        let audioPlayer = document.getElementById('bg-music');
-        let musicPlaylist = [];
-        let currentTrackIndex = 0;
-        let isMusicLoaded = false;
+        // 影片索引追蹤 (隨機開始)
+        let currentVideoIdx = Math.floor(Math.random() * YOUTUBE_PLAYLIST.length);
         
         // 測驗狀態
         let quizState = {
@@ -609,14 +598,9 @@
         const audioFail = new Audio('sounds/fail.mp3'); audioFail.volume = 0.4;
 
         // --- 初始化 ---
-        window.addEventListener('load', () => {
-            fetch('questions.json').then(res => res.json())
-                .then(data => { allQuestions = data; renderQuickLogin(); })
-                .catch(e => console.error("Error loading questions:", e));
-            
-            // 初始化音樂清單
-            fetchMusicList();
-        });
+        fetch('questions.json').then(res => res.json())
+            .then(data => { allQuestions = data; renderQuickLogin(); })
+            .catch(e => console.error("Error loading questions:", e));
 
         function getUserKey(key) { return APP_PREFIX + userName + '_' + key; }
 
@@ -632,13 +616,7 @@
             if(!name) return alert('請輸入雅號');
             userName = name;
             saveUser();
-            
-            // 觸發音樂播放 (第一次互動)
-            if(musicPlaylist.length > 0) {
-                audioPlayer.play().catch(e => console.log("Autoplay prevented:", e));
-                updatePlayerUI();
-            }
-
+            if(isPlayerReady && !isPlaying) player.playVideo();
             goToDashboard();
         }
 
@@ -1179,6 +1157,39 @@
             `).join('') || '<p style="text-align:center">無紀錄</p>';
         }
 
+        function showCollection() {
+            // 保留原本的圖鑑功能，但這裡因為重點在我的最愛，可以考慮隱藏或修改
+            // 這裡維持原樣，顯示過關卡片
+            hideAllScreens();
+            document.getElementById('collection-screen').style.display = 'block';
+            const grid = document.getElementById('collection-grid');
+            grid.innerHTML = "";
+            const progress = JSON.parse(localStorage.getItem(getUserKey('quizProgress'))) || { maxLevel: 1, scores: {} };
+            if(!progress.scores) progress.scores = {};
+
+            for(let i=1; i<=LEVEL_CONFIG.length; i++) {
+                const num = i<10?`0${i}`:`${i}`;
+                const unlocked = (progress.scores[i] !== undefined); // 修改點：只要有完成（有分數）就顯示圖鑑
+                const item = document.createElement('div');
+                item.className = `card-item ${unlocked?'':'locked'}`;
+                
+                if(unlocked) {
+                    item.innerHTML = `<img src="images/card_${num}.jpg" onerror="this.src='https://via.placeholder.com/150?text=Card${num}'">`;
+                    item.onclick = () => openCardModal(`images/card_${num}.jpg`, `意象卡 #${num}`);
+                } else {
+                    item.innerHTML = `<span style="font-size:2em;">🔒</span><br>關卡 ${i}`;
+                }
+                grid.appendChild(item);
+            }
+        }
+
+        function openCardModal(src, title) {
+            document.getElementById('modal-img').src = src;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('card-modal').style.display = 'flex';
+        }
+        function closeCardModal() { document.getElementById('card-modal').style.display = 'none'; }
+        
         function logout() { location.reload(); }
         function exitQuiz() { 
             // 現在已自動存檔，直接離開即可
@@ -1285,122 +1296,62 @@
             msgArea.scrollTop = msgArea.scrollHeight;
         }
 
-        // --- GitHub 音樂播放器邏輯 ---
-        
-        // 抓取 GitHub 檔案清單
-        function fetchMusicList() {
-            const { username, repo, folder } = MUSIC_CONFIG;
-            let apiUrl = `https://api.github.com/repos/${username}/${repo}/contents`;
-            if (folder) apiUrl += `/${folder}`;
-
-            const trackNameDisplay = document.getElementById('track-name');
-            trackNameDisplay.innerText = "讀取歌單中...";
-
-            fetch(apiUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error('GitHub API Error');
-                    return response.json();
-                })
-                .then(data => {
-                    // 過濾 .mp3 檔案
-                    musicPlaylist = data
-                        .filter(item => item.name.endsWith('.mp3'))
-                        .map(item => ({
-                            title: item.name.replace('.mp3', ''),
-                            src: item.download_url
-                        }));
-
-                    if (musicPlaylist.length > 0) {
-                        shufflePlaylist();
-                        isMusicLoaded = true;
-                        // 設定初始音軌但不自動播放（等待使用者互動）
-                        setTrack(0);
-                    } else {
-                        trackNameDisplay.innerText = "無 MP3 檔案";
-                    }
-                })
-                .catch(err => {
-                    console.error('Failed to fetch music:', err);
-                    trackNameDisplay.innerText = "歌單讀取失敗";
-                });
+        // --- YouTube & Audio ---
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('yt-player', {
+                height: '100%', width: '100%',
+                videoId: YOUTUBE_PLAYLIST[currentVideoIdx],
+                playerVars: { 'playsinline': 1, 'controls': 0, 'disablekb': 1, 'fs': 0, 'rel': 0 },
+                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
+            });
         }
-
-        // 洗牌演算法 (Fisher-Yates)
-        function shufflePlaylist() {
-            for (let i = musicPlaylist.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [musicPlaylist[i], musicPlaylist[j]] = [musicPlaylist[j], musicPlaylist[i]];
+        function onPlayerReady() { isPlayerReady = true; player.setVolume(30); }
+        function onPlayerStateChange(e) { 
+            isPlaying = (e.data == YT.PlayerState.PLAYING);
+            document.getElementById('main-play-btn').innerText = isPlaying ? '⏸' : '▶';
+            if(e.data == YT.PlayerState.ENDED) {
+                playRandomTrack(); // Automatically play random track
+            }
+        }
+        function togglePlay() { if(isPlayerReady) isPlaying ? player.pauseVideo() : player.playVideo(); }
+        
+        function prevTrack() { 
+            if(isPlayerReady) {
+                currentVideoIdx = (currentVideoIdx - 1 + YOUTUBE_PLAYLIST.length) % YOUTUBE_PLAYLIST.length;
+                player.loadVideoById(YOUTUBE_PLAYLIST[currentVideoIdx]);
+            }
+        }
+        function nextTrack() { 
+            if(isPlayerReady) {
+                currentVideoIdx = (currentVideoIdx + 1) % YOUTUBE_PLAYLIST.length;
+                player.loadVideoById(YOUTUBE_PLAYLIST[currentVideoIdx]);
+            }
+        } 
+        
+        // 新增的隨機播放函式
+        function playRandomTrack() {
+             if(isPlayerReady) {
+                let newIdx;
+                // 確保隨機選到的不是目前這首，除非清單只有一首
+                do {
+                    newIdx = Math.floor(Math.random() * YOUTUBE_PLAYLIST.length);
+                } while (newIdx === currentVideoIdx && YOUTUBE_PLAYLIST.length > 1);
+                
+                currentVideoIdx = newIdx;
+                player.loadVideoById(YOUTUBE_PLAYLIST[currentVideoIdx]);
             }
         }
 
-        // 設定音軌
-        function setTrack(index) {
-            if (!isMusicLoaded || index < 0 || index >= musicPlaylist.length) return;
-            
-            currentTrackIndex = index;
-            audioPlayer.src = musicPlaylist[currentTrackIndex].src;
-            audioPlayer.load();
-            
-            // 監聽結束事件以自動播放下一首
-            audioPlayer.onended = nextTrack;
-            
-            // 更新 UI
-            updatePlayerUI();
+        function setVolume(v) { if(isPlayerReady) player.setVolume(v); }
+        function toggleVideoDisplay() {
+            const wrap = document.getElementById('yt-wrapper');
+            const btn = document.getElementById('toggle-video-btn');
+            if(window.innerWidth <= 768) wrap.classList.toggle('mobile-visible');
+            else wrap.classList.toggle('video-hidden');
+            const hidden = wrap.classList.contains('video-hidden') && !wrap.classList.contains('mobile-visible');
+            btn.classList.toggle('active', !hidden);
         }
-
-        function updatePlayerUI() {
-            const trackNameDisplay = document.getElementById('track-name');
-            const playBtn = document.getElementById('main-play-btn');
-            
-            if (musicPlaylist[currentTrackIndex]) {
-                trackNameDisplay.innerText = musicPlaylist[currentTrackIndex].title;
-            }
-            
-            playBtn.innerText = audioPlayer.paused ? '▶' : '⏸';
-        }
-
-        // 播放控制
-        function togglePlay() {
-            if (!isMusicLoaded) return;
-            
-            if (audioPlayer.paused) {
-                audioPlayer.play().catch(e => console.error("Play error:", e));
-            } else {
-                audioPlayer.pause();
-            }
-            updatePlayerUI();
-        }
-
-        function prevTrack() {
-            if (!isMusicLoaded) return;
-            let newIndex = currentTrackIndex - 1;
-            if (newIndex < 0) newIndex = musicPlaylist.length - 1;
-            setTrack(newIndex);
-            audioPlayer.play();
-        }
-
-        function nextTrack() {
-            if (!isMusicLoaded) return;
-            let newIndex = (currentTrackIndex + 1) % musicPlaylist.length;
-            setTrack(newIndex);
-            audioPlayer.play();
-        }
-
-        function setVolume(v) {
-            audioPlayer.volume = v / 100;
-        }
-
-        function changeMode() { 
-            /* 目前僅單純循環播放，保留此函數供未來擴充 */ 
-            alert('目前預設為循環播放列表');
-        }
-        
-        // 監聽播放狀態改變圖示
-        audioPlayer.addEventListener('play', updatePlayerUI);
-        audioPlayer.addEventListener('pause', updatePlayerUI);
-        
-        // 設定初始音量
-        audioPlayer.volume = 0.3;
+        function changeMode() { /* Loop handled by simple restart for now */ }
 
     </script>
 </body>
