@@ -358,7 +358,7 @@
             </div>
 
             <div style="text-align:center; margin-top: 30px;">
-                <button id="start-btn" class="btn" onclick="loginAndStart()">🚀 進入系統</button>
+                <button class="btn" onclick="loginAndStart()">🚀 進入系統</button>
             </div>
         </div>
         
@@ -560,14 +560,10 @@
                 } else {
                     console.warn("Firebase config not set.");
                     updateStatusUI('offline');
-                    // 修正: 即使 Config 沒設定或錯誤，也要嘗試離線自動登入
-                    checkLocalAutoLogin();
                 }
             } catch (e) {
                 console.error("Firebase init failed:", e);
                 updateStatusUI('offline');
-                // 修正: 初始化失敗時嘗試離線自動登入
-                checkLocalAutoLogin();
             }
 
             fetch('questions.json').then(res => res.json())
@@ -580,56 +576,26 @@
         async function checkAndAutoLogin() {
             if(!currentUserDocRef) return;
             
-            try {
-                // 嘗試讀取資料
-                const docSnap = await getDoc(currentUserDocRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    userName = data.name || "挑戰者";
-                    currentAvatar = data.avatar || "Chris.png";
-                    listenToUserData();
-                    
-                    document.getElementById('login-form-area').style.display = 'none';
-                    document.getElementById('loading-area').style.display = 'block';
-                    document.querySelector('#loading-area div').innerText = `歡迎回來，${userName}！正在同步資料...`;
-                    
-                    setTimeout(() => goToDashboard(), 1000);
-                } else {
-                    // 雲端無資料，檢查本地是否有舊存檔可以遷移 (選用)
-                    // 或直接顯示登入畫面
-                    document.getElementById('loading-area').style.display = 'none';
-                    document.getElementById('login-form-area').style.display = 'block';
-                }
-            } catch (err) {
-                console.error("Auto login check failed:", err);
-                // 發生錯誤(例如離線)，嘗試本地讀取
-                checkLocalAutoLogin();
-            }
-        }
-
-        // 修正: 新增離線自動登入檢查
-        function checkLocalAutoLogin() {
-            try {
-                const localUser = JSON.parse(localStorage.getItem(APP_PREFIX+'lastUser'));
-                if (localUser && localUser.name) {
-                    userName = localUser.name;
-                    currentAvatar = localUser.avatar || "Chris.png";
-                    
-                    // 嘗試從 LocalStorage 讀取進度
-                    const savedProgress = localStorage.getItem(APP_PREFIX + userName + '_quizProgress');
-                    if (savedProgress) userDataCache.quizProgress = JSON.parse(savedProgress);
-                    
-                    document.getElementById('login-form-area').style.display = 'none';
-                    document.getElementById('loading-area').style.display = 'block';
-                    document.querySelector('#loading-area div').innerText = `(離線模式) 歡迎回來，${userName}！`;
-                    
-                    setTimeout(() => goToDashboard(), 1000);
-                } else {
-                    document.getElementById('loading-area').style.display = 'none';
-                    document.getElementById('login-form-area').style.display = 'block';
-                }
-            } catch (e) {
-                console.error("Local login check error", e);
+            // 嘗試讀取資料
+            const docSnap = await getDoc(currentUserDocRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                // 資料存在，自動載入並跳轉
+                userName = data.name || "挑戰者";
+                currentAvatar = data.avatar || "Chris.png";
+                
+                // 開始監聽資料更新
+                listenToUserData();
+                
+                // UI 顯示正在登入
+                document.getElementById('login-form-area').style.display = 'none';
+                document.getElementById('loading-area').style.display = 'block';
+                document.querySelector('#loading-area div').innerText = `歡迎回來，${userName}！正在同步資料...`;
+                
+                setTimeout(() => goToDashboard(), 1000);
+            } else {
+                // 資料不存在，停留在歡迎畫面等待輸入名字
+                document.getElementById('loading-area').style.display = 'none';
                 document.getElementById('login-form-area').style.display = 'block';
             }
         }
@@ -662,23 +628,19 @@
                          favorites: data.favorites || [],
                          mistakes: data.mistakes || [],
                          quizHistory: data.quizHistory || [],
+                         // 合併所有進度
                          ...Object.keys(data).reduce((acc, key) => {
                              if(key.startsWith('progress_level_')) acc[key] = data[key];
                              return acc;
                          }, {})
                      };
+                 } else {
+                     userDataCache = { quizProgress: { maxLevel: 1, scores: {} }, favorites: [], mistakes: [], quizHistory: [] };
                  }
                  updateStatusUI('online');
                  if(document.getElementById('level-screen').style.display === 'block') {
                      renderLevelGrid();
                  }
-             }, (error) => {
-                 console.error("Data listen error:", error);
-                 // 權限錯誤通常會在這裡觸發
-                 if(error.code === 'permission-denied') {
-                    alert("⚠️ 無法讀取資料！\n\n這通常是因為 Firebase 安全規則 (Security Rules) 尚未設定為允許存取。\n請依提示修改規則為 allow read, write: if request.auth != null;");
-                 }
-                 updateStatusUI('offline');
              });
         }
 
@@ -694,55 +656,33 @@
             if(!name) return alert('請輸入您的雅號');
             userName = name;
             
-            const btn = document.getElementById('start-btn');
-            btn.disabled = true;
-            btn.innerText = "處理中...";
-            
-            try {
-                if (isFirebaseReady && currentUserDocRef) {
-                    updateStatusUI('sync');
-                    // 修正: 加入 try-catch 捕捉寫入錯誤 (例如 Permission Denied)
-                    await setDoc(currentUserDocRef, {
-                        name: userName,
-                        avatar: currentAvatar,
-                        createdAt: new Date().toISOString(),
-                        quizProgress: { maxLevel: 1, scores: {} }
-                    }, { merge: true });
-                    
-                    listenToUserData();
-                } else {
-                    // Fallback LocalStorage (Legacy)
-                    localStorage.setItem(APP_PREFIX+'lastUser', JSON.stringify({name: userName, avatar: currentAvatar}));
-                }
+            if (isFirebaseReady && currentUserDocRef) {
+                // 首次建立資料
+                updateStatusUI('sync');
+                await setDoc(currentUserDocRef, {
+                    name: userName,
+                    avatar: currentAvatar,
+                    createdAt: new Date().toISOString(),
+                    quizProgress: { maxLevel: 1, scores: {} }
+                }, { merge: true });
                 
-                if(musicPlaylist.length > 0) {
-                    audioPlayer.play().catch(e => console.log("Autoplay prevented:", e));
-                    updatePlayerUI();
-                }
-                
-                goToDashboard();
-            } catch (err) {
-                console.error("Login save failed:", err);
-                if (err.code === 'permission-denied') {
-                    alert("⚠️ 存檔失敗：權限不足\n\n請檢查您的 Firebase Firestore Rules 是否已將規則設為：\nallow read, write: if request.auth != null;");
-                } else {
-                    alert("⚠️ 登入發生錯誤，系統將切換為離線模式。\n錯誤訊息: " + err.message);
-                    // 即使雲端失敗，也嘗試進入離線模式
-                    localStorage.setItem(APP_PREFIX+'lastUser', JSON.stringify({name: userName, avatar: currentAvatar}));
-                    goToDashboard();
-                }
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "🚀 進入系統";
+                listenToUserData();
+            } else {
+                // Fallback LocalStorage (Legacy)
+                localStorage.setItem(APP_PREFIX+'lastUser', JSON.stringify({name: userName, avatar: currentAvatar}));
             }
+            
+            if(musicPlaylist.length > 0) {
+                audioPlayer.play().catch(e => console.log("Autoplay prevented:", e));
+                updatePlayerUI();
+            }
+            
+            goToDashboard();
         }
 
         window.logout = function() {
             if(confirm("確定要登出並切換帳號嗎？\n(注意：這會產生新的匿名身分，舊資料需透過原本的瀏覽器身分存取)")) {
-                signOut(auth).then(() => {
-                    localStorage.removeItem(APP_PREFIX+'lastUser'); // 清除本地紀錄
-                    location.reload();
-                });
+                signOut(auth).then(() => location.reload());
             }
         }
 
@@ -770,13 +710,7 @@
             if(!grid) return;
             
             grid.innerHTML = "";
-            
-            // 修正: 混合讀取 LocalStorage 進度 (如果雲端是空的)
             let progress = userDataCache.quizProgress || { maxLevel: 1, scores: {} };
-            if (Object.keys(progress.scores).length === 0) {
-                const localProg = localStorage.getItem(APP_PREFIX + userName + '_quizProgress');
-                if(localProg) progress = JSON.parse(localProg);
-            }
             
             if(!progress.scores) progress.scores = {};
             if(!progress.maxLevel) progress.maxLevel = 1;
@@ -849,18 +783,11 @@
         }
 
         function saveQuizProgress() {
-            // 修正: 同時寫入 LocalStorage 作為備份
-            if(quizState.mode === 'level') {
-                 // Local backup
-                 localStorage.setItem(APP_PREFIX + userName + '_quizProgress', JSON.stringify(userDataCache.quizProgress || {}));
-            }
-
             if(quizState.mode === 'level' && isFirebaseReady && currentUserDocRef) {
                 updateStatusUI('sync');
                 const key = 'progress_level_' + quizState.level;
                 setDoc(currentUserDocRef, { [key]: quizState }, { merge: true })
-                    .then(() => updateStatusUI('online'))
-                    .catch(e => console.warn("Save failed:", e)); // Silent fail on progress save to avoid interruption
+                    .then(() => updateStatusUI('online'));
             }
         }
 
@@ -1039,9 +966,6 @@
                     progress.maxLevel++;
                     unlocked = true;
                 }
-                
-                // 修正: 雙重存檔 (雲端 + 本地)
-                localStorage.setItem(APP_PREFIX + userName + '_quizProgress', JSON.stringify(progress));
                 
                 if(isFirebaseReady && currentUserDocRef) {
                     await setDoc(currentUserDocRef, { quizProgress: progress }, { merge: true });
