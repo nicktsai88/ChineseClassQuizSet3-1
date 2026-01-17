@@ -3,21 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國文閱讀題組測驗 (Cloud Ver.)</title>
+    <title>國文閱讀題組測驗</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
-    <!-- 2. Firebase Import Map 設定 -->
-    <script type="importmap">
-        {
-            "imports": {
-                "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-                "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
-            }
-        }
-    </script>
-
     <style>
         :root {
             /* 配色系統 */
@@ -58,94 +46,37 @@
         h1, h2, h3 { text-align: center; color: var(--text-color); }
         h1 { color: var(--primary-color); text-shadow: 1px 1px 2px rgba(0,0,0,0.1); margin-top: 0;}
 
-        /* --- 音樂播放器固定列 (Layout 修改: 置中) --- */
+        /* --- 音樂播放器固定列 --- */
         #music-player-bar {
             position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height);
             background-color: var(--player-bg); border-bottom: 3px solid var(--primary-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            display: flex; align-items: center;
-            justify-content: space-between; /* 保持左右分開，中間自適應 */
-            padding: 0 15px; box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; align-items: center;
+            justify-content: space-between; padding: 0 15px; box-sizing: border-box;
             z-index: 10000;
         }
-        
-        /* 左側區域 (導覽按鈕) */
-        .player-left { 
-            flex: 1; 
-            display: flex; 
-            justify-content: flex-start; 
-            align-items: center; 
-        }
-
-        /* 中間區域 (音樂控制 + AI) - 新增 */
-        .player-center {
-            flex: 2;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column; /* 讓曲名在控制項上方 */
-            gap: 5px;
-        }
-
-        /* 右側區域 (保留彈性空間或設定按鈕) */
-        .player-right { 
-            flex: 1; 
-            display: flex; 
-            justify-content: flex-end; 
-            align-items: center; 
-        }
-
+        .player-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+        .player-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; }
         .player-icon { font-size: 1.5em; background: #fce4ec; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid var(--primary-color); color: var(--primary-color);}
 
-        /* 修改：曲名跑馬燈樣式 */
-        .track-marquee-container {
-            width: 250px; /* 固定寬度 */
-            overflow: hidden;
-            white-space: nowrap;
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 2px 10px;
-            border: 1px solid #eee;
-        }
-
-        .track-marquee-content {
-            display: inline-block;
-            padding-left: 100%; /* 從最右邊開始 */
-            animation: marquee 10s linear infinite;
-            color: var(--primary-color);
-            font-weight: bold;
+        /* 新增：曲名顯示樣式 */
+        .track-info {
+            margin-right: 15px;
             font-size: 0.9em;
-        }
-        
-        /* 當滑鼠懸停時暫停 */
-        .track-marquee-container:hover .track-marquee-content {
-            animation-play-state: paused;
-        }
-
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
+            font-weight: bold;
+            color: var(--primary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px; /* 限制寬度避免擠壓按鈕 */
         }
 
-        .player-controls { display: flex; align-items: center; gap: 15px; background: #f8f9fa; padding: 5px 20px; border-radius: 30px; border: 1px solid #eee; }
-        .ctrl-btn { background: none; border: none; cursor: pointer; color: #7f8c8d; font-size: 1.4em; padding: 5px; transition: 0.2s;}
-        .ctrl-btn:hover, .ctrl-btn.active { color: var(--primary-color); transform: scale(1.1); }
+        .player-controls { display: flex; align-items: center; gap: 8px; }
+        .ctrl-btn { background: none; border: none; cursor: pointer; color: #7f8c8d; font-size: 1.4em; padding: 5px; }
+        .ctrl-btn:hover, .ctrl-btn.active { color: var(--primary-color); }
         .volume-container { display: flex; align-items: center; gap: 5px; }
         .volume-slider { width: 60px; accent-color: var(--primary-color); cursor: pointer;}
         .mode-btn { border: 1px solid #bdc3c7; background: #fff; padding: 5px 10px; border-radius: 20px; font-size: 0.8em; cursor: pointer; display: flex; align-items: center; gap: 5px;}
         .mode-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
-
-        /* 5. 狀態顯示樣式 */
-        .connection-status {
-            font-size: 0.8em;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 10px;
-            font-weight: bold;
-        }
-        .status-online { color: #2e7d32; background: #e8f5e9; border: 1px solid #c8e6c9; }
-        .status-offline { color: #c62828; background: #ffebee; border: 1px solid #ffcdd2; }
-        .status-sync { color: #1565c0; background: #e3f2fd; border: 1px solid #bbdefb; animation: pulse 1s infinite; }
 
         /* --- 容器通用 --- */
         /* 修改: 限制最大高度並允許內部捲動，確保內容不會被切掉且 Body 不捲動 */
@@ -168,31 +99,10 @@
             transition: 0.3s; object-fit: cover; background: #FFF; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .avatar-option.selected { border-color: var(--primary-color); transform: scale(1.1); }
-        .quick-login-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
-        
-        /* 修改：加大快速登入按鈕 */
-        .user-tag { 
-            background: #fff; 
-            border: 1px solid #bdc3c7; 
-            padding: 12px 25px; /* 加大 Padding */
-            border-radius: 30px; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            font-size: 1.1em; /* 加大字體 */
-            transition: 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .user-tag:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-color: var(--primary-color);
-        }
-
-        .delete-user { font-weight: bold; padding: 2px 8px; border-radius: 50%; background: #eee; color: #888; font-size: 0.9em; transition: 0.2s;}
-        .delete-user:hover { background: var(--wrong-color); color: #fff; transform: scale(1.1);}
-        
+        .quick-login-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 15px; }
+        .user-tag { background: #fff; border: 1px solid #bdc3c7; padding: 6px 15px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95em;}
+        .delete-user { font-weight: bold; padding: 2px 6px; border-radius: 50%; background: #eee; color: #888; }
+        .delete-user:hover { background: var(--wrong-color); color: #fff; }
         input[type="text"] { padding: 12px; font-size: 1.2em; border: 2px solid #bdc3c7; border-radius: 30px; width: 80%; text-align: center; margin: 10px 0;}
 
         /* --- Dashboard (Level Screen) --- */
@@ -432,12 +342,10 @@
             #level-screen-content { flex-direction: column; }
             .dashboard-std-zone { border-right: none; border-bottom: 1px solid #f8bbd0; }
             .card-actions { top: 10px; right: 10px; }
-            #music-player-bar { height: auto; padding: 10px; flex-direction: column; gap: 10px;}
-            .player-left, .player-right, .player-center { width: 100%; justify-content: center; }
+            #music-player-bar { height: 60px; padding: 0 10px; }
+            body { padding-top: 80px; }
             
-            body { padding-top: 140px; } /* 增加 Padding 以容納多行 Header */
-            
-            .track-marquee-container { width: 200px; }
+            .track-info { max-width: 100px; font-size: 0.8em; }
 
             /* AI Chat Mobile Styles */
             #ai-chat-window { width: 90%; right: 5%; bottom: 80px; height: 50vh; }
@@ -463,25 +371,25 @@
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <!-- 音樂播放器 (Layout: Center) -->
+    <!-- 音樂播放器 -->
     <div id="music-player-bar">
-        <!-- 左側：導覽與 Logo -->
         <div class="player-left">
             <div class="player-icon">🎵</div>
             
             <!-- 新增: 儀表板導覽按鈕 (僅在關卡選擇畫面顯示) -->
             <div id="dashboard-nav-btns" style="display:none; align-items:center; gap:10px; margin-left:20px;">
                 <button class="btn btn-sm btn-red" onclick="showMistakes()">📕 <span class="nav-text">錯題本</span></button>
-                <button class="btn btn-sm btn-pink" onclick="showFavorites()">⭐ <span class="nav-text">最愛</span></button>
+                <button class="btn btn-sm btn-pink" onclick="showFavorites()">⭐ <span class="nav-text">我的最愛</span></button>
                 <button class="btn btn-sm btn-green" onclick="showHistory()">🏆 <span class="nav-text">金榜</span></button>
+                <button class="btn btn-sm btn-gray" onclick="logout()">🚪 <span class="nav-text">登出</span></button>
             </div>
 
-            <!-- 測驗導覽控制列 -->
+            <!-- 測驗導覽控制列 (重新排序) -->
             <div id="quiz-nav-info" style="display:none; align-items:center; gap:15px; margin-left:15px;">
                 <span id="nav-level-title" style="font-weight:bold; color:var(--primary-color); font-size: 1.1em;"></span>
                 <span style="font-weight:bold; color:#555; white-space: nowrap;">
@@ -491,14 +399,14 @@
             </div>
         </div>
         
-        <!-- 中間：音樂控制 + AI -->
-        <div class="player-center">
-             <!-- 修改：曲名跑馬燈 -->
-             <div class="track-marquee-container">
-                 <div id="track-name" class="track-marquee-content">載入中...</div>
-             </div>
+        <!-- 隱藏的音訊標籤 -->
+        <audio id="bg-music" preload="auto"></audio>
+        
+        <div class="player-right">
+            <!-- 顯示曲名 -->
+            <span id="track-name" class="track-info">載入中...</span>
 
-             <div class="player-controls">
+            <div class="player-controls">
                 <button class="ctrl-btn" onclick="prevTrack()">⏮</button>
                 <button id="main-play-btn" class="ctrl-btn" onclick="togglePlay()">▶</button>
                 <button class="ctrl-btn" onclick="nextTrack()">⏭</button>
@@ -507,28 +415,14 @@
                     <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="30" oninput="setVolume(this.value)">
                 </div>
                 
-                <div style="width:1px; height:20px; background:#ddd; margin:0 5px;"></div>
-
-                <!-- AI Button Moved Here -->
-                <button id="ai-btn" class="ctrl-btn" onclick="toggleChatWindow()" title="AI 書僮" style="color:var(--primary-color)">🤖</button>
+                <!-- AI Button -->
+                <button id="ai-btn" class="ctrl-btn" onclick="toggleChatWindow()" title="AI 書僮">🤖</button>
 
                 <button id="mode-btn" class="mode-btn" onclick="changeMode()">
                     <span id="mode-icon">🔁</span>
                 </button>
             </div>
         </div>
-
-        <!-- 右側：登出與個人資訊 -->
-        <div class="player-right">
-             <!-- 連線狀態指示器 (移至右邊) -->
-             <span id="connection-status" class="connection-status status-offline" style="margin-right: 15px;">離線</span>
-
-             <!-- 登出按鈕移至此處 -->
-             <button id="logout-btn" class="btn btn-sm btn-gray" onclick="logout()" style="display:none;">🚪 <span class="nav-text">登出</span></button>
-        </div>
-
-        <!-- 隱藏的音訊標籤 -->
-        <audio id="bg-music" preload="auto"></audio>
     </div>
 
     <!-- 歡迎畫面 -->
@@ -547,9 +441,7 @@
             <img src="images/kitty.png" class="avatar-option" onclick="selectAvatar('kitty.png', this)">
         </div>
 
-        <div id="quick-login-area" class="quick-login-area">
-            <div style="color:#888;">正在連接雲端資料庫...</div>
-        </div>
+        <div id="quick-login-area" class="quick-login-area"></div>
 
         <div style="text-align:center; margin-top: 30px;">
             <button class="btn" onclick="loginAndStart()">🚀 開始挑戰</button>
@@ -568,18 +460,23 @@
             <div class="dashboard-std-zone">
                 <div class="dashboard-title">
                     <span>📚 題組挑戰模式</span>
-                    <span id="overall-progress" class="overall-progress">總進度：讀取中...</span>
+                    <span id="overall-progress" class="overall-progress">總進度：0%</span>
                 </div>
                 <div id="level-grid" class="level-grid"></div>
             </div>
         </div>
+
+        <!-- 底部工具列 (已移除) -->
     </div>
 
     <!-- 標準測驗介面 (Reading Comprehension) -->
     <div id="quiz-content" class="container-box fade-in" style="display: none;">
         <div class="quiz-header">
             <h3 id="level-title" style="margin:0; color:var(--primary-color);">關卡 X</h3>
+            <!-- 修改: 已移除舊的「離開」按鈕 -->
         </div>
+        
+        <!-- 修改: 已移除進度條與舊的進度文字 -->
         
         <div id="question-container">
             <div class="question-box">
@@ -596,6 +493,7 @@
             </div>
         </div>
         
+        <!-- 修改: 按鈕移至右下角懸浮 (CSS處理) -->
         <button id="next-btn" class="btn" onclick="nextQuestion()">下一篇 ➡️</button>
     </div>
 
@@ -660,55 +558,19 @@
         </div>
     </div>
 
-    <script type="module">
-        // 3. Import Firebase Functions
-        import { initializeApp } from 'firebase/app';
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-
-        // 2. 【Firebase 設定】請在此處填入您的 API Key
-        const firebaseConfig = {
-  apiKey: "AIzaSyAxQFt76ZPXE7d0i1XeNZ1yiiD2WYNIfHs",
-  authDomain: "chinese-learning-47f4d.firebaseapp.com",
-  projectId: "chinese-learning-47f4d",
-  storageBucket: "chinese-learning-47f4d.firebasestorage.app",
-  messagingSenderId: "76289812052",
-  appId: "1:76289812052:web:898384a916f9f341f62fc1"
-};
-
-        // 3. 【關鍵修改：Collection Name】從 LocalStorage 前綴提取
-        // 原始 APP_PREFIX = 'ChineseQuizSet3-1_'
-        const COLLECTION_NAME = 'ChineseQuizSet3-1'; 
-        const DOC_GLOBAL = '_GLOBAL_USERS_';
-        const APP_PREFIX = 'ChineseQuizSet3-1_'; // 保留舊變數供 LocalStorage Fallback 或 Key 參照
-
-        // Firebase 變數
-        let app, db, auth;
-        let isFirebaseReady = false;
-        let currentUserDocRef = null;
-        let unsubscribeUser = null;
-        let unsubscribeGlobal = null;
-
-        // 本地資料快取 (Mirror Firebase Data for sync performance)
-        let userDataCache = {
-            quizProgress: { maxLevel: 1, scores: {} },
-            favorites: [],
-            mistakes: [],
-            quizHistory: []
-        };
-        let globalUsersCache = [];
-
-        // 音樂設定
+    <script>
+        // 音樂設定 (請修改此處)
         const MUSIC_CONFIG = {
-            username: 'nicktsai88',
-            repo: 'Music',
-            folder: ''
+            username: 'nicktsai88', // 請修改為您的 GitHub 帳號
+            repo: 'Music', // 請修改為您的 Repo 名稱
+            folder: '' // 音樂檔案資料夾名稱
         };
 
         // AI Configuration
         const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
 
         // 設定與全域變數
+        // 修改點：Level config updated to 56 levels (1-55: 5 questions, 56: 6 questions)
         const LEVEL_CONFIG = [
             5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 1-10
             5, 5, 5, 5, 5, 5, 5, 5, 5, 5, // 11-20
@@ -718,6 +580,9 @@
             5, 5, 5, 5, 5,                // 51-55
             6                             // 56
         ];
+        
+        // LocalStorage 前綴
+        const APP_PREFIX = 'ChineseQuizSet3-1_';
         
         let allQuestions = [], currentQuizData = [];
         let userName = "", currentAvatar = "Chris.png";
@@ -730,137 +595,43 @@
         
         // 測驗狀態
         let quizState = {
-            mode: 'level', 
+            mode: 'level', // level, favorites, mistakes
             level: 1,
             score: 0, 
             totalSubQuestions: 0,
             currentIndex: 0,
             pageAnsweredCount: 0,
             pageState: {},
-            qIds: [] 
+            qIds: [] // 題目ID清單，用於非關卡模式
         };
 
         const audioCorrect = new Audio('sounds/correct.mp3'); audioCorrect.volume = 0.4;
         const audioFail = new Audio('sounds/fail.mp3'); audioFail.volume = 0.4;
 
-        // --- 初始化 Firebase 與 App ---
-        async function initApp() {
-            try {
-                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-                    app = initializeApp(firebaseConfig);
-                    db = getFirestore(app);
-                    auth = getAuth(app);
-                    
-                    // 匿名登入
-                    await signInAnonymously(auth);
-                    
-                    // 5. 【狀態管理】更新狀態旗標
-                    isFirebaseReady = true;
-                    updateStatusUI('online');
-                    console.log("Firebase Connected");
-
-                    // 4. 【資料邏輯修改】監聽全域使用者列表
-                    listenToGlobalUsers();
-                } else {
-                    console.warn("Firebase config not set, falling back to LocalStorage mode if possible (Legacy).");
-                    updateStatusUI('offline');
-                    // Fallback to existing localStorage logic for user list
-                    renderQuickLogin();
-                }
-            } catch (e) {
-                console.error("Firebase init failed:", e);
-                updateStatusUI('offline');
-                renderQuickLogin();
-            }
-
-            // 載入題目
+        // --- 初始化 ---
+        window.addEventListener('load', () => {
             fetch('questions.json').then(res => res.json())
-                .then(data => { allQuestions = data; })
+                .then(data => { allQuestions = data; renderQuickLogin(); })
                 .catch(e => console.error("Error loading questions:", e));
             
             // 初始化音樂清單
             fetchMusicList();
-        }
+        });
 
-        // 狀態顯示更新
-        function updateStatusUI(status) {
-            const el = document.getElementById('connection-status');
-            if(status === 'online') {
-                el.className = 'connection-status status-online';
-                el.innerText = '雲端同步';
-            } else if (status === 'sync') {
-                el.className = 'connection-status status-sync';
-                el.innerText = '同步中...';
-            } else {
-                el.className = 'connection-status status-offline';
-                el.innerText = '離線模式';
-            }
-        }
-
-        // 監聽全域使用者列表 (用於登入畫面)
-        function listenToGlobalUsers() {
-            const docRef = doc(db, COLLECTION_NAME, DOC_GLOBAL);
-            unsubscribeGlobal = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    globalUsersCache = docSnap.data().users || [];
-                } else {
-                    globalUsersCache = [];
-                    // 初始化全域文件
-                    setDoc(docRef, { users: [] });
-                }
-                renderQuickLogin();
-            });
-        }
-
-        // 監聽當前使用者資料 (進入 Dashboard 後)
-        function listenToUserData(name) {
-             updateStatusUI('sync');
-             if (unsubscribeUser) unsubscribeUser(); // 取消舊的監聽
-
-             const docRef = doc(db, COLLECTION_NAME, name);
-             currentUserDocRef = docRef;
-
-             unsubscribeUser = onSnapshot(docRef, (docSnap) => {
-                 if (docSnap.exists()) {
-                     const data = docSnap.data();
-                     // 更新本地快取
-                     userDataCache = {
-                         quizProgress: data.quizProgress || { maxLevel: 1, scores: {} },
-                         favorites: data.favorites || [],
-                         mistakes: data.mistakes || [],
-                         quizHistory: data.quizHistory || [],
-                         // 合併所有進度存檔 (動態 key)
-                         ...Object.keys(data).reduce((acc, key) => {
-                             if(key.startsWith('progress_level_')) acc[key] = data[key];
-                             return acc;
-                         }, {})
-                     };
-                 } else {
-                     // 新用戶，初始化
-                     userDataCache = { quizProgress: { maxLevel: 1, scores: {} }, favorites: [], mistakes: [], quizHistory: [] };
-                 }
-                 updateStatusUI('online');
-                 // 如果在 Dashboard，重新渲染 Grid
-                 if(document.getElementById('level-screen').style.display === 'block') {
-                     renderLevelGrid();
-                 }
-             });
-        }
+        function getUserKey(key) { return APP_PREFIX + userName + '_' + key; }
 
         // --- 登入與導航 ---
-        window.selectAvatar = function(img, el) {
+        function selectAvatar(img, el) {
             currentAvatar = img;
             document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
         }
 
-        window.loginAndStart = async function() {
+        function loginAndStart() {
             const name = document.getElementById('username').value.trim();
             if(!name) return alert('請輸入雅號');
             userName = name;
-            
-            // 4. 【資料邏輯修改】使用 Firestore 儲存使用者
-            await saveUser();
+            saveUser();
             
             // 觸發音樂播放 (第一次互動)
             if(musicPlaylist.length > 0) {
@@ -868,56 +639,20 @@
                 updatePlayerUI();
             }
 
-            // 開始監聽該用戶資料
-            if (isFirebaseReady) {
-                listenToUserData(userName);
-                // 等待一下讓資料同步 (簡單 UX 處理)
-                setTimeout(() => goToDashboard(), 500);
-            } else {
-                // Legacy LocalStorage Init
-                goToDashboard();
-            }
+            goToDashboard();
         }
 
-        async function saveUser() {
-            if (isFirebaseReady) {
-                // 檢查是否已存在於全域列表
-                const exists = globalUsersCache.some(u => u.name === userName);
-                if (!exists) {
-                    const docRef = doc(db, COLLECTION_NAME, DOC_GLOBAL);
-                    await updateDoc(docRef, {
-                        users: arrayUnion({ name: userName, avatar: currentAvatar })
-                    });
-                    // 同時建立使用者個人文件
-                    await setDoc(doc(db, COLLECTION_NAME, userName), {
-                        createdAt: new Date().toISOString(),
-                        quizProgress: { maxLevel: 1, scores: {} }
-                    }, { merge: true });
-                }
-            } else {
-                // Legacy
-                let users = JSON.parse(localStorage.getItem(APP_PREFIX+'savedUsers')) || [];
-                if(!users.some(u => u.name === userName)) {
-                    users.push({name: userName, avatar: currentAvatar});
-                    localStorage.setItem(APP_PREFIX+'savedUsers', JSON.stringify(users));
-                }
+        function saveUser() {
+            let users = JSON.parse(localStorage.getItem(APP_PREFIX+'savedUsers')) || [];
+            if(!users.some(u => u.name === userName)) {
+                users.push({name: userName, avatar: currentAvatar});
+                localStorage.setItem(APP_PREFIX+'savedUsers', JSON.stringify(users));
             }
         }
         
-        window.renderQuickLogin = function() {
-            let users = [];
-            if (isFirebaseReady) {
-                users = globalUsersCache;
-            } else {
-                users = JSON.parse(localStorage.getItem(APP_PREFIX+'savedUsers')) || [];
-            }
-
+        function renderQuickLogin() {
+            const users = JSON.parse(localStorage.getItem(APP_PREFIX+'savedUsers')) || [];
             const container = document.getElementById('quick-login-area');
-            if(users.length === 0 && isFirebaseReady) {
-                container.innerHTML = `<div style="color:#666;">尚無挑戰者紀錄，歡迎加入！</div>`;
-                return;
-            }
-
             container.innerHTML = users.map(u => `
                 <div class="user-tag" onclick="quickLogin('${u.name}', '${u.avatar}')">
                     <img src="images/${u.avatar}" style="width:20px;height:20px;border-radius:50%;">${u.name}
@@ -926,41 +661,27 @@
             `).join('');
         }
 
-        window.quickLogin = function(name, av) {
+        function quickLogin(name, av) {
             document.getElementById('username').value = name;
             currentAvatar = av;
             loginAndStart();
         }
 
-        window.deleteUser = async function(name) {
-            // 第一次確認
-            if(!confirm(`確定要刪除 ${name} 的紀錄嗎？`)) return;
+        function deleteUser(name) {
+            if(!confirm(`刪除 ${name} 的所有資料？`)) return;
             
-            // 第二次確認 (新增)
-            if(!confirm(`⚠️ 警告：這將永久刪除「${name}」的所有學習進度、最愛與錯題紀錄，且無法復原！\n\n您真的確定要刪除嗎？`)) return;
-
-            if (isFirebaseReady) {
-                // 從全域移除
-                const userObj = globalUsersCache.find(u => u.name === name);
-                if (userObj) {
-                    await updateDoc(doc(db, COLLECTION_NAME, DOC_GLOBAL), {
-                        users: arrayRemove(userObj)
-                    });
-                }
-                // (選用) 刪除使用者文件 - 這裡保留文件但斷開連結，或是可以 deleteDoc
-                // deleteDoc(doc(db, COLLECTION_NAME, name));
-            } else {
-                const prefix = APP_PREFIX + name;
-                Object.keys(localStorage).forEach(key => {
-                    if(key.startsWith(prefix)) localStorage.removeItem(key);
-                });
-                let users = JSON.parse(localStorage.getItem(APP_PREFIX+'savedUsers')) || [];
-                localStorage.setItem(APP_PREFIX+'savedUsers', JSON.stringify(users.filter(u => u.name !== name)));
-                renderQuickLogin();
-            }
+            // 清除該用戶所有相關資料
+            const prefix = APP_PREFIX + name;
+            Object.keys(localStorage).forEach(key => {
+                if(key.startsWith(prefix)) localStorage.removeItem(key);
+            });
+            
+            let users = JSON.parse(localStorage.getItem(APP_PREFIX+'savedUsers')) || [];
+            localStorage.setItem(APP_PREFIX+'savedUsers', JSON.stringify(users.filter(u => u.name !== name)));
+            renderQuickLogin();
         }
 
-        window.goToDashboard = function() {
+        function goToDashboard() {
             // Hide Nav Info (if active)
             const navInfo = document.getElementById('quiz-nav-info');
             if(navInfo) navInfo.style.display = 'none';
@@ -968,9 +689,6 @@
             // Show Dashboard Nav Btns
             const dashBtns = document.getElementById('dashboard-nav-btns');
             if(dashBtns) dashBtns.style.display = 'flex';
-            
-            // Show Logout Btn
-            document.getElementById('logout-btn').style.display = 'inline-flex';
 
             hideAllScreens();
             document.getElementById('level-screen').style.display = 'block';
@@ -985,20 +703,16 @@
         }
 
         // --- 儀表板與關卡選擇 ---
-        window.renderLevelGrid = function() {
+        function renderLevelGrid() {
             const grid = document.getElementById('level-grid');
             if(!grid) return console.error("Level grid element not found!");
             
             grid.innerHTML = "";
             let progress;
-            
-            // 讀取資料：優先從 Cache 讀取
-            if (isFirebaseReady) {
-                progress = userDataCache.quizProgress || { maxLevel: 1, scores: {} };
-            } else {
-                try {
-                    progress = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_quizProgress')) || { maxLevel: 1, scores: {} };
-                } catch(e) { progress = { maxLevel: 1, scores: {} }; }
+            try {
+                progress = JSON.parse(localStorage.getItem(getUserKey('quizProgress'))) || { maxLevel: 1, scores: {} };
+            } catch(e) {
+                progress = { maxLevel: 1, scores: {} };
             }
             
             if(!progress.scores) progress.scores = {};
@@ -1023,14 +737,9 @@
                         else icon = '🥉';
                     }
                     
-                    // 檢查是否有未完成的進度 (From Cache)
-                    let hasSaved = false;
-                    if (isFirebaseReady) {
-                        hasSaved = userDataCache['progress_level_' + level] !== undefined;
-                    } else {
-                        hasSaved = localStorage.getItem(APP_PREFIX + userName + '_progress_level_' + level);
-                    }
-
+                    // 檢查是否有未完成的進度
+                    const savedKey = getUserKey('progress_level_' + level);
+                    const hasSaved = localStorage.getItem(savedKey);
                     const resumeText = hasSaved ? '<div style="font-size:0.8em;color:#e67e22;">(未完待續)</div>' : '';
 
                     btn.innerHTML = `<div class="lvl-icon">${icon}</div><div class="lvl-label">關卡 ${level}</div>${score !== undefined ? `<div class="lvl-score">${score}分</div>` : ''}${resumeText}`;
@@ -1044,7 +753,7 @@
         }
 
         // --- 測驗邏輯 ---
-        window.startQuiz = function(level) {
+        function startQuiz(level) {
             // 計算該關卡的題目範圍
             let startIdx = 0;
             for(let i=0; i<level-1; i++) startIdx += LEVEL_CONFIG[i];
@@ -1053,19 +762,16 @@
             // 載入題目
             currentQuizData = allQuestions.slice(startIdx, endIdx);
             
-            // 檢查存檔
-            let savedState = null;
-            if (isFirebaseReady) {
-                savedState = userDataCache['progress_level_' + level]; // Obj, not string
-            } else {
-                const raw = localStorage.getItem(APP_PREFIX + userName + '_progress_level_' + level);
-                if(raw) savedState = JSON.parse(raw);
-            }
+            // 檢查是否有存檔
+            const saveKey = getUserKey('progress_level_' + level);
+            const savedState = localStorage.getItem(saveKey);
 
             if (savedState) {
                 // 恢復存檔
-                quizState = savedState; // Direct assignment if Obj
+                quizState = JSON.parse(savedState);
+                // 修正 mode 以防舊存檔錯誤
                 quizState.mode = 'level';
+                // 確保 totalSubQuestions 正確
                 let total = 0;
                 currentQuizData.forEach(q => total += q.subQuestions.length);
                 quizState.totalSubQuestions = total;
@@ -1086,9 +792,10 @@
             loadQuizUI();
         }
 
-        window.startReviewQuiz = function(mode, qIds) {
+        function startReviewQuiz(mode, qIds) {
             if (!qIds || qIds.length === 0) return alert("目前沒有題目！");
             
+            // 根據 ID 列表過濾題目
             currentQuizData = allQuestions.filter(q => qIds.includes(q.id));
             
             quizState = {
@@ -1106,28 +813,20 @@
             loadQuizUI();
         }
 
-        // 4. 【資料邏輯修改】儲存進度
         function saveQuizProgress() {
+            // 只有關卡模式才自動儲存進度
             if(quizState.mode === 'level') {
-                if (isFirebaseReady && currentUserDocRef) {
-                    updateStatusUI('sync');
-                    const key = 'progress_level_' + quizState.level;
-                    setDoc(currentUserDocRef, {
-                        [key]: quizState
-                    }, { merge: true }).then(() => updateStatusUI('online'));
-                } else {
-                    const saveKey = APP_PREFIX + userName + '_progress_level_' + quizState.level;
-                    localStorage.setItem(saveKey, JSON.stringify(quizState));
-                }
+                const saveKey = getUserKey('progress_level_' + quizState.level);
+                localStorage.setItem(saveKey, JSON.stringify(quizState));
             }
         }
 
         function loadQuizUI() {
             hideAllScreens();
             
+            // Hide Dashboard Nav Btns
             const dashBtns = document.getElementById('dashboard-nav-btns');
             if(dashBtns) dashBtns.style.display = 'none';
-            document.getElementById('logout-btn').style.display = 'none';
 
             document.getElementById('quiz-content').style.display = 'block';
             let title = "";
@@ -1136,8 +835,10 @@
             else if (quizState.mode === 'mistakes') title = `📕 錯題複習`;
             
             document.getElementById('level-title').innerText = title;
+            // 新增: 更新導覽列關卡標題
             document.getElementById('nav-level-title').innerText = title;
 
+            // Show Nav Info & Update Total
             document.getElementById('quiz-nav-info').style.display = 'flex';
             document.getElementById('nav-total-q').innerText = currentQuizData.length;
 
@@ -1148,17 +849,22 @@
             const qData = currentQuizData[quizState.currentIndex];
             if(!qData) return finishQuiz();
             
+            // UI 重置
             document.getElementById('next-btn').style.display = 'none';
 
+            // 更新置頂進度 (Navbar)
             document.getElementById('nav-current-q').innerText = quizState.currentIndex + 1;
             
+            // 顯示文章
             document.getElementById('article-title').innerText = qData.title;
             document.getElementById('article-text').innerHTML = qData.article;
 
+            // 處理我的最愛按鈕
             const favIcon = document.getElementById('fav-icon');
             updateFavIcon(qData.id);
             favIcon.onclick = () => toggleFavorite(qData.id);
 
+            // 顯示小題
             const container = document.getElementById('sub-questions-container');
             container.innerHTML = "";
             
@@ -1167,11 +873,13 @@
                 subDiv.className = 'sub-question-item';
                 subDiv.id = `subq-${subQ.id}`;
                 
+                // 題目文字
                 const qText = document.createElement('div');
                 qText.className = 'sub-q-text';
                 qText.innerHTML = `${idx + 1}. ${subQ.q}`;
                 subDiv.appendChild(qText);
                 
+                // 選項列表
                 const optList = document.createElement('div');
                 optList.className = 'option-list';
                 
@@ -1191,6 +899,7 @@
                 
                 subDiv.appendChild(optList);
 
+                // 獨立解析區塊
                 const expDiv = document.createElement('div');
                 expDiv.className = 'single-explanation';
                 expDiv.id = `exp-${subQ.id}`;
@@ -1200,6 +909,7 @@
                 container.appendChild(subDiv);
             });
 
+            // --- 恢復作答狀態 ---
             if (quizState.pageState && Object.keys(quizState.pageState).length > 0) {
                 qData.subQuestions.forEach(subQ => {
                     const savedAnswer = quizState.pageState[subQ.id];
@@ -1235,7 +945,7 @@
             }
         }
 
-        window.handleAnswerImmediate = function(qGroupId, subQId, selectedValue, btnElement, correctAns, explanationText) {
+        function handleAnswerImmediate(qGroupId, subQId, selectedValue, btnElement, correctAns, explanationText) {
             const allBtns = document.querySelectorAll(`.opt-btn-${subQId}`);
             allBtns.forEach(b => b.disabled = true);
 
@@ -1248,6 +958,7 @@
 
             let isCorrect = (userKey === correctAns);
             
+            // 更新狀態
             if (!quizState.pageState) quizState.pageState = {};
             quizState.pageState[subQId] = { selected: selectedValue, isCorrect: isCorrect };
             quizState.pageAnsweredCount++;
@@ -1260,6 +971,8 @@
             } else {
                 btnElement.classList.add('wrong');
                 audioFail.play().catch(()=>{});
+                
+                // 加入錯題本：只要有一題錯，整個題組加入
                 addToMistakes(qGroupId);
 
                 allBtns.forEach(b => {
@@ -1283,10 +996,13 @@
             const currentQData = currentQuizData[quizState.currentIndex];
             if(quizState.pageAnsweredCount >= currentQData.subQuestions.length) {
                 document.getElementById('next-btn').style.display = 'block';
+                setTimeout(() => {
+                    // document.getElementById('next-btn').scrollIntoView({behavior: "smooth"}); // 不再需要 Scroll
+                }, 100);
             }
         }
 
-        window.nextQuestion = function() {
+        function nextQuestion() {
             quizState.currentIndex++;
             quizState.pageAnsweredCount = 0;
             quizState.pageState = {}; 
@@ -1297,25 +1013,15 @@
             document.querySelector('.container-box').scrollIntoView({behavior: 'smooth'});
         }
 
-        window.finishQuiz = async function() {
-            // 清除關卡暫存
+        function finishQuiz() {
             if(quizState.mode === 'level') {
-                if(isFirebaseReady && currentUserDocRef) {
-                     // 刪除欄位 (Firestore用 updateDoc + deleteField 是正規做法，這裡簡單設 null 或移除)
-                     // 為了簡便，使用 updateDoc 覆蓋
-                     const key = 'progress_level_' + quizState.level;
-                     // Firestore delete field syntax:
-                     // import { deleteField } from 'firebase/firestore'; 
-                     // await updateDoc(currentUserDocRef, { [key]: deleteField() });
-                     // 由於這裡沒 import deleteField，簡單忽略或設 null
-                     updateDoc(currentUserDocRef, { [key]: null });
-                } else {
-                    localStorage.removeItem(APP_PREFIX + userName + '_progress_level_' + quizState.level);
-                }
+                localStorage.removeItem(getUserKey('progress_level_' + quizState.level));
             }
 
             document.getElementById('quiz-content').style.display = 'none';
+            // Hide Nav Info
             document.getElementById('quiz-nav-info').style.display = 'none';
+            
             document.getElementById('score-box').style.display = 'block';
             
             const finalScore = Math.round((quizState.score / quizState.totalSubQuestions) * 100);
@@ -1323,30 +1029,20 @@
             document.getElementById('final-name').innerText = userName;
             
             if(quizState.mode === 'level') {
-                let progress;
-                if(isFirebaseReady) {
-                    progress = userDataCache.quizProgress; // 讀取最新的 Cache
-                } else {
-                    progress = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_quizProgress')) || { maxLevel: 1, scores: {} };
-                }
+                let progress = JSON.parse(localStorage.getItem(getUserKey('quizProgress'))) || { maxLevel: 1, scores: {} };
                 
+                // 更新該關卡分數
                 let oldScore = progress.scores[quizState.level] || 0;
                 if(finalScore > oldScore) progress.scores[quizState.level] = finalScore;
-                else if (!progress.scores[quizState.level]) progress.scores[quizState.level] = finalScore;
+                else if (!progress.scores[quizState.level]) progress.scores[quizState.level] = finalScore; // 確保有紀錄
                 
+                // 修改點：只要完成即可解鎖下一關
                 let unlocked = false;
                 if(quizState.level === progress.maxLevel && quizState.level < LEVEL_CONFIG.length) {
                     progress.maxLevel++;
                     unlocked = true;
                 }
-                
-                // 儲存進度
-                if(isFirebaseReady && currentUserDocRef) {
-                    await setDoc(currentUserDocRef, { quizProgress: progress }, { merge: true });
-                } else {
-                    localStorage.setItem(APP_PREFIX + userName + '_quizProgress', JSON.stringify(progress));
-                }
-                
+                localStorage.setItem(getUserKey('quizProgress'), JSON.stringify(progress));
                 document.getElementById('unlock-msg').style.display = unlocked ? 'block' : 'none';
             } else {
                 document.getElementById('unlock-msg').style.display = 'none';
@@ -1361,27 +1057,21 @@
             saveHistory(finalScore, quizState.mode === 'level' ? `關卡 ${quizState.level}` : (quizState.mode === 'favorites' ? '我的最愛' : '錯題複習'));
         }
 
-        // --- 我的最愛與錯題本邏輯 (Firestore Modified) ---
-        window.toggleFavorite = async function(qId) {
-            let favs = [];
-            if(isFirebaseReady) favs = [...userDataCache.favorites];
-            else favs = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_favorites')) || [];
-
+        // --- 我的最愛與錯題本邏輯 ---
+        function toggleFavorite(qId) {
+            let favs = JSON.parse(localStorage.getItem(getUserKey('favorites'))) || [];
             const index = favs.indexOf(qId);
-            if (index > -1) favs.splice(index, 1);
-            else favs.push(qId);
-            
-            if(isFirebaseReady && currentUserDocRef) {
-                // Optimistic UI update handled by listener later, but for snappy feel update icon now
-                updateFavIconUI(favs, qId);
-                await updateDoc(currentUserDocRef, { favorites: favs });
+            if (index > -1) {
+                favs.splice(index, 1);
             } else {
-                localStorage.setItem(APP_PREFIX + userName + '_favorites', JSON.stringify(favs));
-                updateFavIconUI(favs, qId);
+                favs.push(qId);
             }
+            localStorage.setItem(getUserKey('favorites'), JSON.stringify(favs));
+            updateFavIcon(qId);
         }
 
-        function updateFavIconUI(favs, qId) {
+        function updateFavIcon(qId) {
+            let favs = JSON.parse(localStorage.getItem(getUserKey('favorites'))) || [];
             const icon = document.getElementById('fav-icon');
             if (favs.includes(qId)) {
                 icon.innerHTML = '♥';
@@ -1392,38 +1082,21 @@
             }
         }
 
-        window.updateFavIcon = function(qId) {
-            let favs = [];
-            if(isFirebaseReady) favs = userDataCache.favorites || [];
-            else favs = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_favorites')) || [];
-            updateFavIconUI(favs, qId);
-        }
-
-        window.addToMistakes = async function(qId) {
-            let mistakes = [];
-            if(isFirebaseReady) mistakes = [...userDataCache.mistakes];
-            else mistakes = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_mistakes')) || [];
-
+        function addToMistakes(qId) {
+            let mistakes = JSON.parse(localStorage.getItem(getUserKey('mistakes'))) || [];
             if (!mistakes.includes(qId)) {
                 mistakes.push(qId);
-                if(isFirebaseReady && currentUserDocRef) {
-                    await updateDoc(currentUserDocRef, { mistakes: arrayUnion(qId) });
-                } else {
-                    localStorage.setItem(APP_PREFIX + userName + '_mistakes', JSON.stringify(mistakes));
-                }
+                localStorage.setItem(getUserKey('mistakes'), JSON.stringify(mistakes));
             }
         }
 
-        window.showFavorites = function() {
+        function showFavorites() {
             hideAllScreens();
             document.getElementById('favorites-screen').style.display = 'block';
             const list = document.getElementById('favorites-list');
             list.innerHTML = "";
             
-            let favs = [];
-            if(isFirebaseReady) favs = userDataCache.favorites || [];
-            else favs = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_favorites')) || [];
-
+            let favs = JSON.parse(localStorage.getItem(getUserKey('favorites'))) || [];
             if (favs.length === 0) {
                 list.innerHTML = "<div class='list-empty-msg'>目前沒有收藏任何題組喔！<br>趕快去練習並點擊愛心收藏吧！</div>";
                 return;
@@ -1438,6 +1111,7 @@
                 list.appendChild(item);
             });
             
+            // 加入「全部練習」按鈕
             if (favQuestions.length > 1) {
                 const btnAll = document.createElement('button');
                 btnAll.className = "btn";
@@ -1449,16 +1123,13 @@
             }
         }
 
-        window.showMistakes = function() {
+        function showMistakes() {
             hideAllScreens();
             document.getElementById('mistakes-screen').style.display = 'block';
             const list = document.getElementById('mistakes-list');
             list.innerHTML = "";
             
-            let mistakes = [];
-            if(isFirebaseReady) mistakes = userDataCache.mistakes || [];
-            else mistakes = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_mistakes')) || [];
-
+            let mistakes = JSON.parse(localStorage.getItem(getUserKey('mistakes'))) || [];
             if (mistakes.length === 0) {
                 list.innerHTML = "<div class='list-empty-msg'>太棒了！目前沒有錯題！</div>";
                 return;
@@ -1484,35 +1155,23 @@
             }
         }
 
-        // --- History ---
-        window.saveHistory = async function(score, modeTitle) {
-            const entry = {
+        // --- Common Utils ---
+        function saveHistory(score, modeTitle) {
+            let history = JSON.parse(localStorage.getItem(getUserKey('quizHistory'))) || [];
+            history.push({
                 date: new Date().toLocaleString(),
                 score: score,
                 mode: modeTitle
-            };
-
-            if(isFirebaseReady && currentUserDocRef) {
-                await updateDoc(currentUserDocRef, {
-                    quizHistory: arrayUnion(entry)
-                });
-            } else {
-                let history = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_quizHistory')) || [];
-                history.push(entry);
-                localStorage.setItem(APP_PREFIX + userName + '_quizHistory', JSON.stringify(history));
-            }
+            });
+            localStorage.setItem(getUserKey('quizHistory'), JSON.stringify(history));
         }
         
-        window.showHistory = function() {
+        function showHistory() {
             hideAllScreens();
             document.getElementById('history-screen').style.display = 'block';
             const list = document.getElementById('history-list');
-            
-            let history = [];
-            if(isFirebaseReady) history = userDataCache.quizHistory || [];
-            else history = JSON.parse(localStorage.getItem(APP_PREFIX + userName + '_quizHistory')) || [];
-
-            list.innerHTML = [...history].reverse().map(h => `
+            let history = JSON.parse(localStorage.getItem(getUserKey('quizHistory'))) || [];
+            list.innerHTML = history.reverse().map(h => `
                 <li style="background:#fff; padding:15px; border-bottom:1px solid #eee; margin-bottom:10px; border-radius:5px;">
                     <strong>${h.mode}</strong> - <span style="color:${h.score>=60?'green':'red'}">${h.score}分</span>
                     <br><small>${h.date}</small>
@@ -1520,29 +1179,30 @@
             `).join('') || '<p style="text-align:center">無紀錄</p>';
         }
 
-        window.logout = function() { location.reload(); }
-        window.exitQuiz = function() { 
+        function logout() { location.reload(); }
+        function exitQuiz() { 
+            // 現在已自動存檔，直接離開即可
             goToDashboard(); 
         }
 
         // --- AI Chat Logic ---
-        window.toggleChatWindow = function() {
+        function toggleChatWindow() {
             const win = document.getElementById('ai-chat-window');
             win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
         }
 
-        window.handleAiKeypress = function(e) {
+        function handleAiKeypress(e) {
             if (e.key === 'Enter') sendAiMessage();
         }
 
-        window.resetAiKey = function() {
-            if(confirm("確定要清除目前儲存的 API Key 嗎？")) {
+        function resetAiKey() {
+            if(confirm("確定要清除目前儲存的 API Key 嗎？下次使用 AI 功能時將需要重新輸入。")) {
                 localStorage.removeItem(APP_PREFIX + 'gemini_api_key');
                 alert("API Key 已清除！");
             }
         }
 
-        window.sendAiMessage = async function() {
+        async function sendAiMessage() {
             const input = document.getElementById('ai-input');
             const msgArea = document.getElementById('ai-messages');
             const userText = input.value.trim();
@@ -1552,7 +1212,7 @@
             let apiKey = localStorage.getItem(APP_PREFIX + 'gemini_api_key');
 
             if (!apiKey) {
-                const inputKey = prompt("請輸入您的 Google Gemini API Key：");
+                const inputKey = prompt("請輸入您的 Google Gemini API Key：\n(金鑰將儲存在您的瀏覽器本地端，不會上傳伺服器，請安心使用)");
                 if (!inputKey || inputKey.trim() === "") {
                     alert("需要 API Key 才能使用 AI 書僮功能喔！");
                     return;
@@ -1616,7 +1276,7 @@
                 msgArea.appendChild(errorMsg);
 
                 if (error.message.includes('400') || error.message.includes('403') || error.message.includes('key')) {
-                    if(confirm("連線失敗，可能是 API Key 無效。是否要重設？")) {
+                    if(confirm("連線失敗，可能是 API Key 無效或過期。是否要清除舊的 Key 並重新輸入？")) {
                         localStorage.removeItem(APP_PREFIX + 'gemini_api_key');
                     }
                 }
@@ -1626,7 +1286,9 @@
         }
 
         // --- GitHub 音樂播放器邏輯 ---
-        window.fetchMusicList = function() {
+        
+        // 抓取 GitHub 檔案清單
+        function fetchMusicList() {
             const { username, repo, folder } = MUSIC_CONFIG;
             let apiUrl = `https://api.github.com/repos/${username}/${repo}/contents`;
             if (folder) apiUrl += `/${folder}`;
@@ -1640,6 +1302,7 @@
                     return response.json();
                 })
                 .then(data => {
+                    // 過濾 .mp3 檔案
                     musicPlaylist = data
                         .filter(item => item.name.endsWith('.mp3'))
                         .map(item => ({
@@ -1650,6 +1313,7 @@
                     if (musicPlaylist.length > 0) {
                         shufflePlaylist();
                         isMusicLoaded = true;
+                        // 設定初始音軌但不自動播放（等待使用者互動）
                         setTrack(0);
                     } else {
                         trackNameDisplay.innerText = "無 MP3 檔案";
@@ -1661,24 +1325,30 @@
                 });
         }
 
-        window.shufflePlaylist = function() {
+        // 洗牌演算法 (Fisher-Yates)
+        function shufflePlaylist() {
             for (let i = musicPlaylist.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [musicPlaylist[i], musicPlaylist[j]] = [musicPlaylist[j], musicPlaylist[i]];
             }
         }
 
-        window.setTrack = function(index) {
+        // 設定音軌
+        function setTrack(index) {
             if (!isMusicLoaded || index < 0 || index >= musicPlaylist.length) return;
             
             currentTrackIndex = index;
             audioPlayer.src = musicPlaylist[currentTrackIndex].src;
             audioPlayer.load();
+            
+            // 監聽結束事件以自動播放下一首
             audioPlayer.onended = nextTrack;
+            
+            // 更新 UI
             updatePlayerUI();
         }
 
-        window.updatePlayerUI = function() {
+        function updatePlayerUI() {
             const trackNameDisplay = document.getElementById('track-name');
             const playBtn = document.getElementById('main-play-btn');
             
@@ -1689,7 +1359,8 @@
             playBtn.innerText = audioPlayer.paused ? '▶' : '⏸';
         }
 
-        window.togglePlay = function() {
+        // 播放控制
+        function togglePlay() {
             if (!isMusicLoaded) return;
             
             if (audioPlayer.paused) {
@@ -1700,7 +1371,7 @@
             updatePlayerUI();
         }
 
-        window.prevTrack = function() {
+        function prevTrack() {
             if (!isMusicLoaded) return;
             let newIndex = currentTrackIndex - 1;
             if (newIndex < 0) newIndex = musicPlaylist.length - 1;
@@ -1708,27 +1379,28 @@
             audioPlayer.play();
         }
 
-        window.nextTrack = function() {
+        function nextTrack() {
             if (!isMusicLoaded) return;
             let newIndex = (currentTrackIndex + 1) % musicPlaylist.length;
             setTrack(newIndex);
             audioPlayer.play();
         }
 
-        window.setVolume = function(v) {
+        function setVolume(v) {
             audioPlayer.volume = v / 100;
         }
 
-        window.changeMode = function() { 
+        function changeMode() { 
+            /* 目前僅單純循環播放，保留此函數供未來擴充 */ 
             alert('目前預設為循環播放列表');
         }
         
+        // 監聽播放狀態改變圖示
         audioPlayer.addEventListener('play', updatePlayerUI);
         audioPlayer.addEventListener('pause', updatePlayerUI);
+        
+        // 設定初始音量
         audioPlayer.volume = 0.3;
-
-        // 啟動 App
-        window.addEventListener('load', initApp);
 
     </script>
 </body>
