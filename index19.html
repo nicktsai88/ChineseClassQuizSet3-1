@@ -30,8 +30,7 @@
             --wrong-color: #d81b60;     
             --favorite-color: #8e24aa;  
             --player-bg: #ffffff;
-            /* 修改 1: 縮小 Header 高度 (原本 100px) */
-            --header-height: 70px;
+            --header-height: 100px;
         }
 
         /* 修改: 鎖定 Body 捲動 */
@@ -78,14 +77,14 @@
             align-items: center; 
         }
 
-        /* 修改 2: 中間區域改為水平排列 */
+        /* 中間區域 (音樂控制 + AI) - 新增 */
         .player-center {
             flex: 2;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: row; /* 原本是 column */
-            gap: 15px; /* 增加間距 */
+            flex-direction: column; /* 讓曲名在控制項上方 */
+            gap: 5px;
         }
 
         /* 右側區域 (保留彈性空間或設定按鈕) */
@@ -98,9 +97,9 @@
 
         .player-icon { font-size: 1.5em; background: #fce4ec; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid var(--primary-color); color: var(--primary-color);}
 
-        /* 修改 3: 調整跑馬燈寬度以適應水平排列 */
+        /* 修改：曲名跑馬燈樣式 */
         .track-marquee-container {
-            width: 200px; /* 原本 250px，稍微縮小 */
+            width: 250px; /* 固定寬度 */
             overflow: hidden;
             white-space: nowrap;
             background: #f8f9fa;
@@ -154,7 +153,7 @@
             background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05);
             backdrop-filter: blur(10px); position: relative; margin-bottom: 20px;
-            max-height: calc(100vh - 150px); /* 隨 Header 縮小調整高度 */
+            max-height: calc(100vh - 180px); /* 稍微縮小最大高度，增加底部緩衝 */
             overflow-y: auto; /* 內容過長時，卡片內部捲動 */
         }
 
@@ -283,8 +282,8 @@
             flex-wrap: wrap; /* RWD */
             overflow: hidden;
             border-top: 5px solid var(--primary-color);
-            /* 修改: 縮小高度，避免貼底 */
-            height: calc(100vh - 210px); 
+            /* 修改: 縮小高度，避免貼底 (100vh - 240px)，提供更多底部緩衝 */
+            height: calc(100vh - 240px); 
             align-items: stretch;
         }
 
@@ -434,12 +433,6 @@
             .dashboard-std-zone { border-right: none; border-bottom: 1px solid #f8bbd0; }
             .card-actions { top: 10px; right: 10px; }
             #music-player-bar { height: auto; padding: 10px; flex-direction: column; gap: 10px;}
-            
-            /* 修改 4: 手機版時，音樂控制區域恢復垂直排列，以節省寬度 */
-            .player-center {
-                flex-direction: column;
-                gap: 5px;
-            }
             .player-left, .player-right, .player-center { width: 100%; justify-content: center; }
             
             body { padding-top: 140px; } /* 增加 Padding 以容納多行 Header */
